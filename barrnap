@@ -1,0 +1,200 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Time::Piece;
+use FindBin;
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# global variables
+
+my $EXE = $FindBin::RealScript;
+my $VERSION = "0.1";
+my $AUTHOR = 'Torsten Seemann <torsten.seemann@monash.edu>';
+my $URL = 'http://www.vicbioinformatics.com';
+my $DATABASE = "$FindBin::RealBin/db/barnapp.hmm";
+my $OPSYS = $^O;
+my $NHMMER = "$FindBin::RealBin/binaries/nhmmer.$OPSYS";
+my %LENG = ("5S_rRNA"=>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232);
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# command line options
+
+my(@Options, $quiet, $threads, $evalue, $lencutoff);
+setOptions();
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# check all is well
+
+msg("This is $EXE $VERSION");
+msg("Written by $AUTHOR");
+msg("Obtained from $URL");
+msg("Detected operating system: $OPSYS");
+
+if (! -x $NHMMER) {
+  err("No binary for your OS '$OPSYS' is included. If you have one, copy it to $NHMMER.");
+}
+msg("Using HMMER binary: $NHMMER");
+
+if (! -r "$DATABASE.h3i") {
+  err("The pressed HMM files are missing. Go to the barnapp folder and type 'make database'");
+}
+msg("Found database files: $DATABASE.*");
+
+$threads > 0 or err("Invalid --threads $threads");
+msg("Will use $threads threads");
+
+$evalue > 0 or err("Invalid --evalue $evalue");
+msg("Setting evalue cutoff to $evalue");
+
+$lencutoff > 0 or err("Invalid --lencutoff $lencutoff");
+msg("Will tag genes < $lencutoff x full length as partial genes");
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# run the external command
+
+my $fasta = shift @ARGV;
+$fasta && -r $fasta or err("Usage: $EXE <file.fasta>");
+
+msg("Running $NHMMER on $fasta ... please wait");
+my $cmd = "$NHMMER --cpu $threads -E $evalue --w_length 2000  -o /dev/null --tblout /dev/stdout \Q$DATABASE\E \Q$fasta\E";
+my @hits = qx($cmd 2>&1);
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# process the output
+
+my @feat;
+foreach (@hits) {
+  chomp;
+  err("nhmmer failed to run - $_") if m/fail|error|core dump|bus error/i;
+  next if m/^#/;    # comment line
+  next if m/^\s*$/; # empty line
+  my @x = split ' ', $_;
+  err("bad line in nhmmer output - @x") unless defined $x[6] and $x[6] =~ m/^\d+$/;
+
+  my($begin,$end,$strand) = $x[6] < $x[7] ? ($x[6],$x[7],'-') : ($x[7],$x[6],'+');
+  my($seqid, $gene, $prod) = ($x[0], $x[2], $x[2]);
+  $prod =~ s/_r/ ribosomal /; # convert the short ID to an English string
+
+  # check for incomplete alignments
+  my $len = $end-$begin+1;
+  if ($len < int($lencutoff * $LENG{$gene}) ) {
+    $prod .= " (partial)";
+  }
+
+  msg("Found:", $gene, $seqid, $begin, $end, $strand, $prod);
+  push @feat, [
+    $seqid, 'barnapp', "rRNA", $begin, $end, '.', $strand, '.', "Name=$gene;product=$prod"
+  ];
+}
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# output a sorted GFF3
+
+sub gff_sort {
+  # sort by seqid, then start pos
+  return ($a->[0] cmp $b->[0]) || ($a->[3] <=> $b->[3]);
+}
+
+msg("Found", scalar(@feat), "ribosomal RNA features.");
+msg("Sorting features and outputting GFF3...");
+print "##gff-version 3\n";
+for my $row (sort { gff_sort } @feat) {
+  print join("\t", @$row),"\n";
+}
+
+#----------------------------------------------------------------------
+
+sub msg {
+  return if $quiet;
+  my $t = localtime;
+  my $line = "[".$t->hms."] @_\n";
+  print STDERR $line;
+}
+
+#----------------------------------------------------------------------
+
+sub err {
+  $quiet=0;
+  msg(@_);
+  exit(2);
+}
+
+#----------------------------------------------------------------------
+
+sub version {
+  print STDERR "$EXE $VERSION\n";
+  exit;
+}
+
+#----------------------------------------------------------------------
+
+sub show_citation {
+  print STDERR << "EOCITE";
+  
+If you use Barrnap in your work, please cite:
+
+    Seemann T (2013)
+    Barrnap: Bacterial ribosomal RNA predictor
+    http://vicbioinformatics.com/
+    
+Thank you.
+
+EOCITE
+
+  exit;
+}
+
+#----------------------------------------------------------------------
+# Option setting routines
+
+sub setOptions {
+  use Getopt::Long;
+
+  @Options = (
+    'Options:',
+    {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
+    {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
+    {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
+    {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
+    {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>8,  DESC=>"Number of threads/cores/CPUs to use"},
+    {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to tag as pseudo"},
+    {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>1E-6, DESC=>"Similarity e-value cut-off"},
+  );
+
+  (!@ARGV) && (usage());
+
+  &GetOptions(map {$_->{OPT}, $_->{VAR}} grep { ref } @Options) || usage();
+
+  # Now setup default values.
+  foreach (@Options) {
+    if (ref $_ && defined($_->{DEFAULT}) && !defined(${$_->{VAR}})) {
+      ${$_->{VAR}} = $_->{DEFAULT};
+    }
+  }
+}
+
+#----------------------------------------------------------------------
+
+sub usage {
+  print STDERR "Synopsis:\n  Bacterial ribosomal RNA predictor\n";
+  print STDERR "Author:\n  $AUTHOR\n";
+  print STDERR "Usage:\n  $EXE [options] <chromosomes.fasta>\n";
+  foreach (@Options) {
+    if (ref) {
+      my $def = defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
+      $def = ($def ? ' (default OFF)' : '(default ON)') if $_->{OPT} =~ m/!$/;
+      my $opt = $_->{OPT};
+      $opt =~ s/!$//; 
+      $opt =~ s/=s$/ [X]/; 
+      $opt =~ s/=i$/ [N]/;
+      $opt =~ s/=f$/ [n.n]/;
+      printf STDERR "  --%-15s %s%s\n", $opt, $_->{DESC}, $def;
+    }
+    else {
+      print STDERR "$_\n";
+    }      
+  }
+  exit(1);
+}
+
+#----------------------------------------------------------------------
