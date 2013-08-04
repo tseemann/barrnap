@@ -11,7 +11,7 @@ my $EXE = $FindBin::RealScript;
 my $VERSION = "0.1";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@monash.edu>';
 my $URL = 'http://www.vicbioinformatics.com';
-my $DATABASE = "$FindBin::RealBin/db/barnapp.hmm";
+my $DATABASE = "$FindBin::RealBin/db/barrnap.hmm";
 my $OPSYS = $^O;
 my $NHMMER = "$FindBin::RealBin/binaries/nhmmer.$OPSYS";
 my %LENG = ("5S_rRNA"=>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232);
