@@ -27,18 +27,17 @@ It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Bo
 
 ## Install
 
-   % cd $HOME
-   % tar zxvf barnapp-XXX.tar.gz
-   % echo 'PATH=$PATH:$HOME/barnapp-XXX' >> .bashrc
-   (logout and log back in)
+    % cd $HOME
+    % tar zxvf barnapp-XXX.tar.gz
+    % echo 'PATH=$PATH:$HOME/barnapp-XXX' >> .bashrc
+    (logout and log back in)
 
 ## Usage
 
     % barrnap --quiet --threads 16 examples/small.fna
-
     ##gff-version 3
     P.marinus  barnapp	rRNA	353307	354799	.	-	.	Name=16S_rRNA;product=16S ribosomal RNA
-    P.marinus	 barnapp	rRNA	355464	358331	.	-	.	Name=23S_rRNA;product=23S ribosomal RNA
+    P.marinus	barnapp	rRNA	355464	358331	.	-	.	Name=23S_rRNA;product=23S ribosomal RNA
     P.marinus  barnapp	rRNA	358433	358536	.	-	.	Name=5S_rRNA;product=5S ribosomal RNA
     P.marinus  barnapp	rRNA	1156211	1158743	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA (partial)
 
