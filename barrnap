@@ -71,7 +71,7 @@ foreach (@hits) {
   my @x = split ' ', $_;
   err("bad line in nhmmer output - @x") unless defined $x[6] and $x[6] =~ m/^\d+$/;
 
-  my($begin,$end,$strand) = $x[6] < $x[7] ? ($x[6],$x[7],'-') : ($x[7],$x[6],'+');
+  my($begin,$end,$strand) = $x[6] < $x[7] ? ($x[6],$x[7],'+') : ($x[7],$x[6],'-');
   my($seqid, $gene, $prod) = ($x[0], $x[2], $x[2]);
   $prod =~ s/_r/ ribosomal /; # convert the short ID to an English string
 
