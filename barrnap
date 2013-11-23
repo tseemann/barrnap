@@ -8,9 +8,10 @@ use FindBin;
 # global variables
 
 my $EXE = $FindBin::RealScript;
-my $VERSION = "0.2";
+my $VERSION = "0.3";
+my $DESC = "Bacterial/Archaeal Ribosomal RNA Predictor";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@monash.edu>';
-my $URL = 'http://www.vicbioinformatics.com';
+my $URL = 'http://www.vicbioinformatics.com/';
 my $DATABASE = "$FindBin::RealBin/db/barrnap.hmm";
 my $OPSYS = $^O;
 my $NHMMER = "$FindBin::RealBin/binaries/nhmmer.$OPSYS";
@@ -19,7 +20,7 @@ my %LENG = ("5S_rRNA"=>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232);
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
-my(@Options, $quiet, $threads, $evalue, $lencutoff);
+my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -48,6 +49,16 @@ msg("Setting evalue cutoff to $evalue");
 
 $lencutoff > 0 or err("Invalid --lencutoff $lencutoff");
 msg("Will tag genes < $lencutoff x full length as partial genes");
+
+if ($kingdom =~ m/^b/i) {
+  $kingdom = 'bacteria';
+}
+elsif ($kingdom =~ m/^a/i) {
+  $kingdom = 'archaea';
+}
+else {
+  err("I don't recognise the --kingdom '$kingdom'");
+}
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # run the external command
@@ -134,8 +145,8 @@ sub show_citation {
 If you use Barrnap in your work, please cite:
 
     Seemann T (2013)
-    Barrnap: Bacterial ribosomal RNA predictor
-    http://vicbioinformatics.com/
+    $EXE $VERSION : $DESC
+    $URL
     
 Thank you.
 
@@ -155,6 +166,7 @@ sub setOptions {
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
+    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bacteria', DESC=>"Kingdom: [b]acteria [a]rchaea"},
     {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
     {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>8,  DESC=>"Number of threads/cores/CPUs to use"},
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to tag as pseudo"},
@@ -176,7 +188,7 @@ sub setOptions {
 #----------------------------------------------------------------------
 
 sub usage {
-  print STDERR "Synopsis:\n  Bacterial ribosomal RNA predictor\n";
+  print STDERR "Synopsis:\n  $EXE $VERSION - $DESC\n";
   print STDERR "Author:\n  $AUTHOR\n";
   print STDERR "Usage:\n  $EXE [options] <chromosomes.fasta>\n";
   foreach (@Options) {
