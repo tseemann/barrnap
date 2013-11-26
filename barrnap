@@ -12,7 +12,7 @@ my $VERSION = "0.3";
 my $DESC = "Bacterial/Archaeal Ribosomal RNA Predictor";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@monash.edu>';
 my $URL = 'http://www.vicbioinformatics.com/';
-my $DATABASE = "$FindBin::RealBin/db/barrnap.hmm";
+my $DBDIR = "$FindBin::RealBin/db";
 my $OPSYS = $^O;
 my $NHMMER = "$FindBin::RealBin/binaries/nhmmer.$OPSYS";
 my %LENG = ("5S_rRNA"=>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232);
@@ -36,10 +36,10 @@ if (! -x $NHMMER) {
 }
 msg("Using HMMER binary: $NHMMER");
 
-if (! -r "$DATABASE.h3i") {
-  err("The pressed HMM files are missing. Go to the barnapp folder and type 'make database'");
-}
-msg("Found database files: $DATABASE.*");
+#if (! -r "$DATABASE.h3i") {
+#  err("The pressed HMM files are missing. Go to the barnapp folder and type 'make database'");
+#}
+#msg("Found database files: $DATABASE.*");
 
 $threads > 0 or err("Invalid --threads $threads");
 msg("Will use $threads threads");
@@ -60,6 +60,9 @@ else {
   err("I don't recognise the --kingdom '$kingdom'");
 }
 
+my $hmmdb = "$DBDIR/$kingdom.hmm";
+msg("Using database: $hmmdb");
+
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # run the external command
 
@@ -67,7 +70,7 @@ my $fasta = shift @ARGV;
 $fasta && -r $fasta or err("Usage: $EXE <file.fasta>");
 
 msg("Running $NHMMER on $fasta ... please wait");
-my $cmd = "$NHMMER --cpu $threads -E $evalue --w_length 2000  -o /dev/null --tblout /dev/stdout \Q$DATABASE\E \Q$fasta\E";
+my $cmd = "$NHMMER --cpu $threads -E $evalue --w_length 2000  -o /dev/null --tblout /dev/stdout \Q$hmmdb\E \Q$fasta\E";
 my @hits = qx($cmd 2>&1);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -84,6 +87,8 @@ foreach (@hits) {
 
   my($begin,$end,$strand) = $x[6] < $x[7] ? ($x[6],$x[7],'+') : ($x[7],$x[6],'-');
   my($seqid, $gene, $prod) = ($x[0], $x[2], $x[2]);
+
+  # assumes NAME field in .HMM file is of form "16s_rRNA" etc
   $prod =~ s/_r/ ribosomal /; # convert the short ID to an English string
 
   # check for incomplete alignments
@@ -92,7 +97,7 @@ foreach (@hits) {
     $prod .= " (partial)";
   }
 
-  msg("Found:", $gene, $seqid, $begin, $end, $strand, $prod);
+  msg("Found:", $gene, $seqid, "L=$len/$LENG{$gene}", "$begin..$end", $strand, $prod);
   push @feat, [
     $seqid, "$EXE:$VERSION", 'rRNA', $begin, $end, '.', $strand, '.', "Name=$gene;product=$prod"
   ];
