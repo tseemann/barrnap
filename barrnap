@@ -20,7 +20,7 @@ my %LENG = ("5S_rRNA"=>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232);
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
-my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff);
+my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff, $incseq);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -57,10 +57,11 @@ elsif ($kingdom =~ m/^a/i) {
   $kingdom = 'archaea';
 }
 else {
-  err("I don't recognise the --kingdom '$kingdom'");
+  err("I don't recognise the --kingdom '$kingdom'. Try 'bacteria' or 'archaea'.");
 }
 
 my $hmmdb = "$DBDIR/$kingdom.hmm";
+err("Can't find database: $hmmdb") unless -r $hmmdb;
 msg("Using database: $hmmdb");
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -116,6 +117,11 @@ msg("Sorting features and outputting GFF3...");
 print "##gff-version 3\n";
 for my $row (sort { gff_sort } @feat) {
   print join("\t", @$row),"\n";
+}
+if ($incseq) {
+  print "##FASTA\n";
+  open FASTA, $fasta;
+  print while (<FASTA>);  # `cat $fasta`
 }
 
 #----------------------------------------------------------------------
@@ -176,6 +182,7 @@ sub setOptions {
     {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>8,  DESC=>"Number of threads/cores/CPUs to use"},
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to tag as pseudo"},
     {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>1E-6, DESC=>"Similarity e-value cut-off"},
+    {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA input sequences in GFF3 output"},
   );
 
   (!@ARGV) && (usage());
