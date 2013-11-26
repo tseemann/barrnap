@@ -1,6 +1,6 @@
 # Barrnap
 
-Bacterial ribosomal RNA predictor
+Bacterial & Archael Ribosomal RNA Predictor
 
 ## Description
 
@@ -10,24 +10,23 @@ It uses the new NHMMER tool that comes with HMMER 3.1-dev for HMM searching in D
 NHMMER binaries for 64-bit Linux and Mac OS X are included and will be auto-detected.
 Multithreading is supported and one can expect roughly linear speed-ups with more CPUs.
 
-This tool is designed to be a substitute for RNAmmer for bacteria. It was motivated by
+This tool is designed to be a substitute for RNAmmer for prokaryotes. It was motivated by
 my desire to remove <A HREF="software.prokka.shtml">Prokka's</A> dependency on RNAmmer
-which is encumbered by an free-for-academic sign-up license, and by needed legacy HMMER 2.x
+which is encumbered by a free-for-academic sign-up license, and by needed legacy HMMER 2.x
 which conflicts with HMMER 3.x that most people are using now.
 
 RNAmmer is more sophisticated than Barrnap, and more accurate.
 because it uses HMMER 2.x in glocal alignment mode, whereas                            
 HMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014).
 In practice, Barrnap will find all the typical
-5/16/23S genes in bacteria, but may get the end points out by a few bases
-and will probably miss wierd rRNAs.
-The HMM models it uses are derived from RFAM, Silva, and GreenGenes.
+5/16/23S genes in prokaryotes in a few seconds, 
+but may get the end points out by a few bases and will probably miss wierd rRNAs.
+The HMM models it uses are derived from Silva (16S/23S) and RefSeq (5S).
 
-Barrnap is for bacteria (prokaryota) only. 
-If you want to find rRNA genes in
-Archaea or Eukaryota then you should continue to use RNAmmer.
+Barrnap is for bacteria and archaea (prokaryota) only. 
+If you want to find rRNA genes in Eukaryota then you should continue to use RNAmmer.
 
-The name Barrnap is derived from <I>BActerial Ribosomal RNA Predictor</I>.
+The name Barrnap is derived from <I>Bacterial/Archaeal Ribosomal RNA Predictor</I>.
 It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Booth.
 
 ## Download
@@ -44,7 +43,7 @@ It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Bo
 
 ## Usage
 
-    % barrnap --quiet --threads 16 examples/small.fna
+    % barrnap --kingdom bacteria --quiet --threads 16 examples/small.fna
     ##gff-version 3
     P.marinus  barrnap	rRNA	353307	354799	.	-	.	Name=16S_rRNA;product=16S ribosomal RNA
     P.marinus  barrnap	rRNA	355464	358331	.	-	.	Name=23S_rRNA;product=23S ribosomal RNA
@@ -53,7 +52,7 @@ It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Bo
 
 ## Caveats
 
-* Barrnap does not do anything fancy. It has 3 HM models - 5S, 16S, and 23S. They are built from full length seed alignments. 
+* Barrnap does not do anything fancy. It has 3 HMM models - 5S, 16S, and 23S. They are built from full length seed alignments. 
 
 ## Requirements
 
