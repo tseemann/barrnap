@@ -7,11 +7,14 @@ help:
 	@echo "make database    # rebuild the pressed HMM files"
 	@echo "make test        # run a short test to see if it works"
 	@echo "make clean       # remove useless files"
+	@echo "make tarball     # [Developer only]"
 
 	
 database:
-	cd db && cat *.hmm > $(EXE).hmm && hmmpress $(EXE).hmm && rm -f $(EXE).hmm
-
+#	v2.0
+#	cd db && cat *.hmm > $(EXE).hmm && hmmpress $(EXE).hmm && rm -f $(EXE).hmm
+#	v3.0
+	cd db && hmmpress bacteria.hmm && hmmpress archaea.hmm
 	
 test:
 	./$(EXE) examples/small.fna
