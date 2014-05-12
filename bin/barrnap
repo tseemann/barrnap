@@ -8,13 +8,13 @@ use FindBin;
 # global variables
 
 my $EXE = $FindBin::RealScript;
-my $VERSION = "0.3";
+my $VERSION = "0.4-dev";
 my $DESC = "Bacterial/Archaeal Ribosomal RNA Predictor";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@monash.edu>';
 my $URL = 'http://www.vicbioinformatics.com/';
-my $DBDIR = "$FindBin::RealBin/db";
+my $DBDIR = "$FindBin::RealBin/../db";
 my $OPSYS = $^O;
-my $NHMMER = "$FindBin::RealBin/binaries/nhmmer.$OPSYS";
+my $NHMMER = "$FindBin::RealBin/../binaries/$OPSYS/nhmmer";
 my %LENG = ("5S_rRNA"=>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
