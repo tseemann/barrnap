@@ -6,7 +6,7 @@ Bacterial & Archael Ribosomal RNA Predictor
 
 Barrnap predicts the location of 5S, 16S and 23S ribosomal RNA genes in Bacterial genome sequ
 It takes FASTA DNA sequence as input, and write GFF3 as output.
-It uses the new NHMMER tool that comes with HMMER 3.1-dev for HMM searching in DNA:DNA style.
+It uses the new NHMMER tool that comes with HMMER 3.1 for HMM searching in DNA:DNA style.
 NHMMER binaries for 64-bit Linux and Mac OS X are included and will be auto-detected.
 Multithreading is supported and one can expect roughly linear speed-ups with more CPUs.
 
@@ -37,8 +37,8 @@ It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Bo
 ## Install
 
     % cd $HOME
-    % tar zxvf barnapp-XXX.tar.gz
-    % echo 'PATH=$PATH:$HOME/barnapp-XXX' >> .bashrc
+    % tar zxvf barnapp-1.x.tar.gz
+    % echo "PATH=$PATH:$HOME/barnapp-1.x/bin" >> .bashrc
     (logout and log back in)
 
 ## Usage
@@ -58,6 +58,7 @@ It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Bo
 
 * Linux x86_64 or Mac OS X
 * Perl >= 5.6
+* NHMMER >= 3.1
 
 ## License
 
