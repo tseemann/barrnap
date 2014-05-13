@@ -9,7 +9,7 @@ use FindBin;
 # global variables
 
 my $EXE = $FindBin::RealScript;
-my $VERSION = "0.4-dev";
+my $VERSION = "0.4";
 my $DESC = "Bacterial/Archaeal Ribosomal RNA Predictor";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@monash.edu>';
 my $URL = 'http://www.vicbioinformatics.com/';

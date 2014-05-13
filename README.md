@@ -4,27 +4,26 @@ Bacterial & Archael Ribosomal RNA Predictor
 
 ## Description
 
-Barrnap predicts the location of 5S, 16S and 23S ribosomal RNA genes in Bacterial genome sequ
+Barrnap predicts the location of ribosomal RNA genes in genomes.
+It supports bacteria (5S,23S,16S), archaea (5S,5.8S,23S,16S),
+mitochondria (12S,16S) and eukaryotes (5S,5.8S,28S,18S).
+
 It takes FASTA DNA sequence as input, and write GFF3 as output.
-It uses the new NHMMER tool that comes with HMMER 3.1 for HMM searching in DNA:DNA style.
+It uses the new NHMMER tool that comes with HMMER 3.1 for HMM searching in RNA:DNA style.
 NHMMER binaries for 64-bit Linux and Mac OS X are included and will be auto-detected.
 Multithreading is supported and one can expect roughly linear speed-ups with more CPUs.
 
-This tool is designed to be a substitute for RNAmmer for prokaryotes. It was motivated by
+This tool is designed to be a substitute for RNAmmer. It was motivated by
 my desire to remove <A HREF="software.prokka.shtml">Prokka's</A> dependency on RNAmmer
 which is encumbered by a free-for-academic sign-up license, and by needed legacy HMMER 2.x
 which conflicts with HMMER 3.x that most people are using now.
 
 RNAmmer is more sophisticated than Barrnap, and more accurate.
 because it uses HMMER 2.x in glocal alignment mode, whereas                            
-HMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014).
-In practice, Barrnap will find all the typical
-5/16/23S genes in prokaryotes in a few seconds, 
+NHMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014).
+In practice, Barrnap will find all the typical rRNA genes in prokaryotes in a few seconds, 
 but may get the end points out by a few bases and will probably miss wierd rRNAs.
-The HMM models it uses are derived from Silva (16S/23S) and RefSeq (5S).
-
-Barrnap is for bacteria and archaea (prokaryota) only. 
-If you want to find rRNA genes in Eukaryota then you should continue to use RNAmmer.
+The HMM models it uses are derived from Rfam, Silva and RefSeq.
 
 The name Barrnap is derived from <I>Bacterial/Archaeal Ribosomal RNA Predictor</I>.
 It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Booth.
