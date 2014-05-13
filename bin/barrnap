@@ -51,10 +51,13 @@ $lencutoff > 0 or err("Invalid --lencutoff $lencutoff");
 msg("Will tag genes < $lencutoff x full length as partial genes");
 
 if ($kingdom =~ m/^b/i) {
-  $kingdom = 'bacteria';
+  $kingdom = 'bac';
 }
 elsif ($kingdom =~ m/^a/i) {
-  $kingdom = 'archaea';
+  $kingdom = 'arc';
+}
+elsif ($kingdom =~ m/^e/i) {
+  $kingdom = 'euk';
 }
 else {
   err("I don't recognise the --kingdom '$kingdom'. Try 'bacteria' or 'archaea'.");
