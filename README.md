@@ -13,21 +13,6 @@ It uses the new NHMMER tool that comes with HMMER 3.1 for HMM searching in RNA:D
 NHMMER binaries for 64-bit Linux and Mac OS X are included and will be auto-detected.
 Multithreading is supported and one can expect roughly linear speed-ups with more CPUs.
 
-This tool is designed to be a substitute for RNAmmer. It was motivated by
-my desire to remove <A HREF="software.prokka.shtml">Prokka's</A> dependency on RNAmmer
-which is encumbered by a free-for-academic sign-up license, and by needed legacy HMMER 2.x
-which conflicts with HMMER 3.x that most people are using now.
-
-RNAmmer is more sophisticated than Barrnap, and more accurate.
-because it uses HMMER 2.x in glocal alignment mode, whereas                            
-NHMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014).
-In practice, Barrnap will find all the typical rRNA genes in prokaryotes in a few seconds, 
-but may get the end points out by a few bases and will probably miss wierd rRNAs.
-The HMM models it uses are derived from Rfam, Silva and RefSeq.
-
-The name Barrnap is derived from <I>Bacterial/Archaeal Ribosomal RNA Predictor</I>.
-It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Booth.
-
 ## Download
 
 * Tarball: http://www.vicbioinformatics.com/software.barrnap.shtml
@@ -36,13 +21,13 @@ It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Bo
 ## Install
 
     % cd $HOME
-    % tar zxvf barnapp-1.x.tar.gz
-    % echo "PATH=$PATH:$HOME/barnapp-1.x/bin" >> .bashrc
+    % tar zxvf barnapp-0.X.tar.gz
+    % echo "PATH=$PATH:$HOME/barnapp-0.x/bin" >> .bashrc
     (logout and log back in)
 
 ## Usage
 
-    % barrnap --kingdom bacteria --quiet --threads 16 examples/small.fna
+    % barrnap --kingdom bac --quiet --threads 16 examples/small.fna
     ##gff-version 3
     P.marinus  barrnap	rRNA	353307	354799	.	-	.	Name=16S_rRNA;product=16S ribosomal RNA
     P.marinus  barrnap	rRNA	355464	358331	.	-	.	Name=23S_rRNA;product=23S ribosomal RNA
@@ -51,17 +36,38 @@ It was spawned at CodeFest 2013 in Berlin, Germany by Torsten Seemann and Tim Bo
 
 ## Caveats
 
-* Barrnap does not do anything fancy. It has 3 HMM models - 5S, 16S, and 23S. They are built from full length seed alignments. 
+Barrnap does not do anything fancy. It has HMM models for each different rRNA gene. 
+They are built from full length seed alignments. 
 
 ## Requirements
 
-* Linux x86_64 or Mac OS X
 * Perl >= 5.6
 * NHMMER >= 3.1
 
 ## License
 
 Barrnap is free software, released under the GPL (version 3).
+
+## Comparison with RNAmmer
+
+Barrnap is designed to be a substitute for RNAmmer. It was motivated by
+my desire to remove <A HREF="software.prokka.shtml">Prokka's</A> dependency on RNAmmer
+which is encumbered by a free-for-academic sign-up license, and by RNAmmer's
+dependence on legacy HMMER 2.x which conflicts with HMMER 3.x that most people are using now.
+
+RNAmmer is more sophisticated than Barrnap, and more accurate.
+because it uses HMMER 2.x in glocal alignment mode, whereas                            
+NHMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014).
+In practice, Barrnap will find all the typical rRNA genes in a few seconds (in bacteria), 
+but may get the end points out by a few bases and will probably miss wierd rRNAs.
+The HMM models it uses are derived from Rfam, Silva and RefSeq.
+
+## Where does the name come from?
+
+The name Barrnap is derived from <I>Bacterial/Archaeal Ribosomal RNA Predictor</I>,
+however it has since been extended to support mitochondrial and eukaryotic rRNAs.
+The project was originally spawned at CodeFest 2013 in Berlin, Germany 
+by Torsten Seemann and Tim Booth.
 
 ## Author
 
