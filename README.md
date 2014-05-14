@@ -60,12 +60,7 @@ my desire to remove <A HREF="software.prokka.shtml">Prokka's</A> dependency on R
 which is encumbered by a free-for-academic sign-up license, and by RNAmmer's
 dependence on legacy HMMER 2.x which conflicts with HMMER 3.x that most people are using now.
 
-RNAmmer is more sophisticated than Barrnap, and more accurate.
-because it uses HMMER 2.x in glocal alignment mode, whereas                            
-NHMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014).
-In practice, Barrnap will find all the typical rRNA genes in a few seconds (in bacteria), 
-but may get the end points out by a few bases and will probably miss wierd rRNAs.
-The HMM models it uses are derived from Rfam, Silva and RefSeq.
+RNAmmer is more sophisticated than Barrnap, and more accurate because it uses HMMER 2.x in glocal alignment mode whereas NHMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014). In practice, Barrnap will find all the typical rRNA genes in a few seconds (in bacteria), but may get the end points out by a few bases and will probably miss wierd rRNAs. The HMM models it uses are derived from Rfam, Silva and RefSeq.
 
 ## Where does the name come from?
 
