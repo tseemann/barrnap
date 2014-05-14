@@ -34,6 +34,11 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
     P.marinus  barrnap	rRNA	358433	358536	.	-	.	Name=5S_rRNA;product=5S ribosomal RNA
     P.marinus  barrnap	rRNA	1156211	1158743	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA (partial)
 
+    % barrnap -q -k mito examples/mitochondria.fna 
+    ##gff-version 3
+    AF346967.1	barrnap	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
+    AF346967.1	barrnap	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+
 ## Caveats
 
 Barrnap does not do anything fancy. It has HMM models for each different rRNA gene. 
