@@ -111,8 +111,9 @@ by Torsten Seemann and Tim Booth.
 
 Torsten Seemann<BR>
 Email: torsten.seemann@monash.edu<BR>
-Victorian Bioinformatics Consortium http://vicbioinformatics.com<BR>
-Life Sciences Computation Centre http://vlsci.org.au/lscc
+Twitter: @torstenseemann<BR>
+URL: Victorian Bioinformatics Consortium http://vicbioinformatics.com<BR>
+URL: Life Sciences Computation Centre http://vlsci.org.au/lscc
 
 
 
