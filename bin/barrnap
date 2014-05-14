@@ -38,9 +38,7 @@ msg("Written by $AUTHOR");
 msg("Obtained from $URL");
 msg("Detected operating system: $OPSYS");
 
-if (! -x $NHMMER) {
-  err("No binary for your OS '$OPSYS' is included. If you have one, copy it to $NHMMER.");
-}
+-x $NHMMER or err("No binary for your OS '$OPSYS' is included. If you have one, copy it to $NHMMER.");
 msg("Using HMMER binary: $NHMMER");
 
 $threads > 0 or err("Invalid --threads $threads");
