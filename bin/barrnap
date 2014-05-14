@@ -10,7 +10,7 @@ use FindBin;
 
 my $EXE = $FindBin::RealScript;
 my $VERSION = "0.4";
-my $DESC = "Bacterial/Archaeal Ribosomal RNA Predictor";
+my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@monash.edu>';
 my $URL = 'http://www.vicbioinformatics.com/';
 my $DBDIR = "$FindBin::RealBin/../db";
@@ -190,11 +190,12 @@ sub setOptions {
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
-    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bacteria', DESC=>"Kingdom: [b]acteria [a]rchaea"},
+    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bac', 
+       DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
     {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
     {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>8,  DESC=>"Number of threads/cores/CPUs to use"},
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to label as partial"},
-    {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.5, DESC=>"Proportional length threshold to reject as prediction"},
+    {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.5, DESC=>"Proportional length threshold to reject prediction"},
     {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>1E-9, DESC=>"Similarity e-value cut-off"},
     {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA input sequences in GFF3 output"},
   );
