@@ -74,7 +74,9 @@ by Torsten Seemann and Tim Booth.
 
 Torsten Seemann<BR>
 Email: torsten.seemann@monash.edu<BR>
-Victorian Bioinformatics Consortium http://bioinformatics.net.au
+Victorian Bioinformatics Consortium http://vicbioinformatics.com<BR>
+Life Sciences Computation Centre http://vlsci.org.au/lscc
+
 
 
 
