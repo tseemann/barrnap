@@ -1,6 +1,6 @@
 # Barrnap
 
-Bacterial & Archael Ribosomal RNA Predictor
+BAsic Rapid Ribosomal RNA Predictor
 
 ## Description
 
@@ -64,8 +64,9 @@ The HMM models it uses are derived from Rfam, Silva and RefSeq.
 
 ## Where does the name come from?
 
-The name Barrnap is derived from <I>Bacterial/Archaeal Ribosomal RNA Predictor</I>,
-however it has since been extended to support mitochondrial and eukaryotic rRNAs.
+The name Barrnap was originally derived from _Bacterial/Archaeal Ribosomal RNA Predictor_.
+However it has since been extended to support mitochondrial and eukaryotic rRNAs, and has been
+given the new backronym _BAsic Rapid Ribosomal RNA Predictor_.
 The project was originally spawned at CodeFest 2013 in Berlin, Germany 
 by Torsten Seemann and Tim Booth.
 
