@@ -2,6 +2,16 @@ data/
 blib/
 .build/
 _build/
+build/*.h??
+build/*.i??
+build/*.cm
+build/*.ssi
+build/Rfam.seed
+build/*.fasta
+build/*.bac.*
+build/*.arc.*
+build/*.euk.*
+build/LSU*
 cover_db/
 inc/
 Build
