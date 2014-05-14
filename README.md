@@ -62,6 +62,43 @@ dependence on legacy HMMER 2.x which conflicts with HMMER 3.x that most people a
 
 RNAmmer is more sophisticated than Barrnap, and more accurate because it uses HMMER 2.x in glocal alignment mode whereas NHMMER 3.x currently only supports local alignment (Sean Eddy expects glocal to be supported in 2014). In practice, Barrnap will find all the typical rRNA genes in a few seconds (in bacteria), but may get the end points out by a few bases and will probably miss wierd rRNAs. The HMM models it uses are derived from Rfam, Silva and RefSeq.
 
+## Data sources for HMM models
+
+<pre>
+Bacteria (70S)  
+        Large
+        50S
+                5S      RF00001
+                23S     SILVA-LSU-Bac
+        Small
+        30S
+                16S     RF00177
+
+Archaea (70S)   
+        Large
+        50S
+                5S      RF00001
+                5.8S    RF00002
+                23S     SILVA-LSU-Arc
+        Small
+        30S
+                16S     RF01959
+
+Eukarya (80S)   
+        Large
+        60S
+                5S      RF00001
+                5.8S    RF00002
+                28S     SILVA-LSU-Euk
+        Small
+        40S
+                18S     RF01960
+
+Mitochondria
+                12S     RefSeq (MT-RNR1, s-rRNA, rns)
+                16S     RefSeq (MT-RNR2, l-rRNA, rnl)       
+</pre>
+
 ## Where does the name come from?
 
 The name Barrnap was originally derived from _Bacterial/Archaeal Ribosomal RNA Predictor_.
