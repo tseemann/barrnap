@@ -75,28 +75,44 @@ Bacteria (70S)
                 16S     RF00177
 
 Archaea (70S)   
-        Large
-        50S
+        LSU 50S
                 5S      RF00001
                 5.8S    RF00002
                 23S     SILVA-LSU-Arc
-        Small
-        30S
+        SSU 30S
                 16S     RF01959
 
 Eukarya (80S)   
-        Large
-        60S
+        LSU 60S
                 5S      RF00001
                 5.8S    RF00002
                 28S     SILVA-LSU-Euk
-        Small
-        40S
+        SSU 40S
                 18S     RF01960
-
-Mitochondria
+        Mito
                 12S     RefSeq (MT-RNR1, s-rRNA, rns)
                 16S     RefSeq (MT-RNR2, l-rRNA, rnl)       
+
+TODO: [Sanjeet Haridas]
+Fungi
+        LSU 35S ?
+                5S
+                5.8S
+                25S
+        SSU ?
+                18S
+        Mito [http://www.ncbi.nlm.nih.gov/nuccore/NC_001224.1]
+                15S 
+                21S (multiple exons)
+                
+
+TODO:
+Apicoplast [http://www.ncbi.nlm.nih.gov/nuccore/U87145.2]
+                LSU ~2500bp 28S ?
+                SSU ~1500bp 16S ?
+
+Plastid ?
+
 </pre>
 
 ## Where does the name come from?
