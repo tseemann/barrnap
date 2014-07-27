@@ -6,6 +6,7 @@ EXE=barrnap
 help:
 #	@echo "make database    # rebuild the pressed HMM files"
 	@echo "make test        # run a short test to see if it works"
+	@echo "make bigtest     # run a big test on each kingdom"
 	@echo "make clean       # remove useless files"
 	@echo "make tarball     # [Developer only]"
 
@@ -19,6 +20,12 @@ help:
 test:
 	./bin/$(EXE) examples/small.fna
 
+bigtest:
+	./bin/$(EXE) --kingdom bac  examples/bacteria.fna
+	./bin/$(EXE) --kingdom arc  examples/archaea.fna
+	./bin/$(EXE) --kingdom euk  examples/fungus.fna
+	./bin/$(EXE) --kingdom mito examples/mitochondria.fna
+	
 	
 clean:
 	rm -f *~ core foo DEADJOE
