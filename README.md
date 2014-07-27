@@ -93,7 +93,7 @@ Eukarya (80S)
                 12S     RefSeq (MT-RNR1, s-rRNA, rns)
                 16S     RefSeq (MT-RNR2, l-rRNA, rnl)       
 
-TODO: [Sanjeet Haridas]
+TODO: [Sajeet Haridas]
 Fungi
         LSU 35S ?
                 5S
@@ -130,7 +130,4 @@ Email: torsten.seemann@monash.edu<BR>
 Twitter: @torstenseemann<BR>
 URL: Victorian Bioinformatics Consortium http://vicbioinformatics.com<BR>
 URL: Life Sciences Computation Centre http://vlsci.org.au/lscc
-
-
-
 
