@@ -86,6 +86,7 @@ foreach (@hits) {
 
   my($begin,$end,$strand) = $x[6] < $x[7] ? ($x[6],$x[7],'+') : ($x[7],$x[6],'-');
   my($seqid, $gene, $prod) = ($x[0], $x[2], $x[2]);
+  my $score = defined $x[12]  ? $x[12] : '.';
 
   # check if hit makes sense to us
   exists $LENG{$gene} or err("Detected unknown gene '$gene' in scan, aborting.");
@@ -111,7 +112,7 @@ foreach (@hits) {
   my $tags = "Name=$gene;product=$prod";
   $tags .= ";note=$note" if $note;
   push @feat, [
-    $seqid, "$EXE:$VERSION", 'rRNA', $begin, $end, '.', $strand, '.', $tags,
+    $seqid, "$EXE:$VERSION", 'rRNA', $begin, $end, $score, $strand, '.', $tags,
   ];
 }
 
