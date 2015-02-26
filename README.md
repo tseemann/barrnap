@@ -21,8 +21,8 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 ## Install
 
     % cd $HOME
-    % tar zxvf barnapp-0.X.tar.gz
-    % echo "PATH=$PATH:$HOME/barnapp-0.x/bin" >> .bashrc
+    % tar zxvf barrnap-0.X.tar.gz
+    % echo "PATH=$PATH:$HOME/barrnap-0.x/bin" >> .bashrc
     (logout and log back in)
 
 ## Usage
