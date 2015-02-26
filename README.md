@@ -27,17 +27,16 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 
 ## Usage
 
-    % barrnap --kingdom bac --quiet --threads 16 examples/small.fna
+    % barrnap --quiet examples/small.fna
     ##gff-version 3
-    P.marinus  barrnap	rRNA	353307	354799	.	-	.	Name=16S_rRNA;product=16S ribosomal RNA
-    P.marinus  barrnap	rRNA	355464	358331	.	-	.	Name=23S_rRNA;product=23S ribosomal RNA
-    P.marinus  barrnap	rRNA	358433	358536	.	-	.	Name=5S_rRNA;product=5S ribosomal RNA
-    P.marinus  barrnap	rRNA	1156211	1158743	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA (partial)
+    P.marinus	barrnap:0.5	rRNA	353314	354793	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+    P.marinus	barrnap:0.5	rRNA	355464	358334	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
+    P.marinus	barrnap:0.5	rRNA	358433	358536	7.5e-07	+	.	Name=5S_rRNA;product=5S ribosomal RNA
 
     % barrnap -q -k mito examples/mitochondria.fna 
     ##gff-version 3
-    AF346967.1	barrnap	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
-    AF346967.1	barrnap	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+    AF346967.1	barrnap:0.5	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
+    AF346967.1	barrnap:0.5	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
 
 ## Caveats
 
@@ -47,7 +46,7 @@ They are built from full length seed alignments.
 ## Requirements
 
 * Perl >= 5.6
-* NHMMER >= 3.1
+* NHMMER >= 3.1b
 
 ## License
 
@@ -126,8 +125,6 @@ by Torsten Seemann and Tim Booth.
 ## Author
 
 Torsten Seemann<BR>
-Email: torsten.seemann@monash.edu<BR>
+Email: torsten.seemann@gmail.com<BR>
 Twitter: @torstenseemann<BR>
-URL: Victorian Bioinformatics Consortium http://vicbioinformatics.com<BR>
-URL: Life Sciences Computation Centre http://vlsci.org.au/lscc
 
