@@ -23,7 +23,7 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
     % cd $HOME
     % tar zxvf barrnap-0.X.tar.gz
     % echo "PATH=$PATH:$HOME/barrnap-0.x/bin" >> .bashrc
-    (logout and log back in)
+    % source .bashrc
 
 ## Usage
 
