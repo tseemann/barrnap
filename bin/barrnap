@@ -132,7 +132,7 @@ for my $row (sort { gff_sort } @feat) {
 }
 if ($incseq) {
   print "##FASTA\n";
-  open FASTA, $fasta;
+  open FASTA, '<', $fasta;
   print while (<FASTA>);  # `cat $fasta`
 }
 
