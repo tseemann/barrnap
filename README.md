@@ -2,6 +2,10 @@
 
 BAsic Rapid Ribosomal RNA Predictor
 
+## Author
+
+Torsten Seemann - torsten.seemann@gmail.com - @torstenseemann
+
 ## Description
 
 Barrnap predicts the location of ribosomal RNA genes in genomes.
@@ -15,8 +19,8 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 
 ## Download
 
-* Tarball: http://www.vicbioinformatics.com/software.barrnap.shtml
-* Source: https://github.com/Victorian-Bioinformatics-Consortium/barrnap
+* Tarballs: https://github.com/tseemann/barrnap/releases/
+* Source: https://github.com/tseemann/barrnap
 
 ## Install
 
@@ -29,14 +33,14 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 
     % barrnap --quiet examples/small.fna
     ##gff-version 3
-    P.marinus	barrnap:0.5	rRNA	353314	354793	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
-    P.marinus	barrnap:0.5	rRNA	355464	358334	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
-    P.marinus	barrnap:0.5	rRNA	358433	358536	7.5e-07	+	.	Name=5S_rRNA;product=5S ribosomal RNA
+    P.marinus	barrnap:0.7	rRNA	353314	354793	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+    P.marinus	barrnap:0.7	rRNA	355464	358334	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
+    P.marinus	barrnap:0.7	rRNA	358433	358536	7.5e-07	+	.	Name=5S_rRNA;product=5S ribosomal RNA
 
     % barrnap -q -k mito examples/mitochondria.fna 
     ##gff-version 3
-    AF346967.1	barrnap:0.5	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
-    AF346967.1	barrnap:0.5	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+    AF346967.1	barrnap:0.7	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
+    AF346967.1	barrnap:0.7	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
 
 ## Caveats
 
@@ -46,7 +50,7 @@ They are built from full length seed alignments.
 ## Requirements
 
 * Perl >= 5.6
-* NHMMER >= 3.1b
+* HMMER >= 3.1b
 
 ## License
 
@@ -55,7 +59,7 @@ Barrnap is free software, released under the GPL (version 3).
 ## Comparison with RNAmmer
 
 Barrnap is designed to be a substitute for RNAmmer. It was motivated by
-my desire to remove <A HREF="software.prokka.shtml">Prokka's</A> dependency on RNAmmer
+my desire to remove <A HREF="https://github.com/tseemann/prokka">Prokka's</A> dependency on RNAmmer
 which is encumbered by a free-for-academic sign-up license, and by RNAmmer's
 dependence on legacy HMMER 2.x which conflicts with HMMER 3.x that most people are using now.
 
@@ -65,12 +69,10 @@ RNAmmer is more sophisticated than Barrnap, and more accurate because it uses HM
 
 <pre>
 Bacteria (70S)  
-        Large
-        50S
+        LSU 50S
                 5S      RF00001
                 23S     SILVA-LSU-Bac
-        Small
-        30S
+        SSU 30S
                 16S     RF00177
 
 Archaea (70S)   
@@ -110,7 +112,8 @@ Apicoplast [http://www.ncbi.nlm.nih.gov/nuccore/U87145.2]
                 LSU ~2500bp 28S ?
                 SSU ~1500bp 16S ?
 
-Plastid ?
+Plastid [Shaun Jackman]
+	?
 
 </pre>
 
@@ -121,10 +124,4 @@ However it has since been extended to support mitochondrial and eukaryotic rRNAs
 given the new backronym _BAsic Rapid Ribosomal RNA Predictor_.
 The project was originally spawned at CodeFest 2013 in Berlin, Germany 
 by Torsten Seemann and Tim Booth.
-
-## Author
-
-Torsten Seemann<BR>
-Email: torsten.seemann@gmail.com<BR>
-Twitter: @torstenseemann<BR>
 
