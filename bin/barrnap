@@ -167,8 +167,8 @@ if ($output_fn) {
       for my $feat (@{$feat{$record->id}}) {
         my $feat_record = $record->trunc($feat->location);
         $feat_record->display_id(sprintf "BARRNAP_%06d", $counter++);
-        my @gene_tags = $feat->get_tag_values("name");
-        $feat_record->desc(sprintf "%s %s %d..%d", $record->id, $gene_tags[0], $feat->start, $feat->end);
+        my @product_tags = $feat->get_tag_values("product");
+        $feat_record->desc(sprintf "%s %s %d..%d", $record->id, $product_tags[0], $feat->start, $feat->end);
         $output_fasta->write_seq( $feat_record );
       }
     }
