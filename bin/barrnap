@@ -131,7 +131,7 @@ foreach (@hits) {
     -start      => $begin,
     -end        => $end,
     -strand     => $strand,
-    -score      => $score,  # possibly x[16] but had problems here with '!'
+    -score      => $score,
     -frame      => 0,
     -tag        => \%tags  );
 
@@ -160,7 +160,6 @@ close(FASTA);
 
 if ($output_fn) {
   my $counter = 1;
-  # output fasta features if requested
   my $input_fasta = Bio::SeqIO->new(-format => "fasta", -file => $fasta );
   my $output_fasta = Bio::SeqIO->new(-format => "fasta", -file => ">$output_fn" );
   while(my $record = $input_fasta->next_seq) {
