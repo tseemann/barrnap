@@ -4,7 +4,10 @@ use warnings;
 use Time::Piece;
 use List::Util qw(max);
 use FindBin;
-
+use Bio::SeqFeature::Generic;
+use Bio::Seq;
+use Bio::SeqIO;
+use Bio::Tools::GFF;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
@@ -27,7 +30,7 @@ my $MAXLEN = int( 1.2 * max(values %LENG) );
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
-my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff, $reject, $incseq);
+my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff, $reject, $incseq, $output_fn);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -74,7 +77,9 @@ my @hits = qx($cmd 2>&1);
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # process the output
 
-my @feat;
+
+
+my %feat;
 HIT: 
 foreach (@hits) {
   chomp;
@@ -109,31 +114,63 @@ foreach (@hits) {
   }
 
   msg("Found:", $gene, $seqid, "L=$len/$LENG{$gene}", "$begin..$end", $strand, $prod);
-  my $tags = "Name=$gene;product=$prod";
-  $tags .= ";note=$note" if $note;
-  push @feat, [
-    $seqid, "$EXE:$VERSION", 'rRNA', $begin, $end, $score, $strand, '.', $tags,
-  ];
+  my %tags = (
+      'name' => $gene,
+      'product' => $prod,
+      #TODO: should this be included?
+      #'inference' => "COORDINATES:profile:nhmmer",
+    );
+  if($note) {
+    $tags{'note'} = $note;
+  }
+  push @{$feat{$seqid}}, Bio::SeqFeature::Generic->new( 
+    -primary    => 'rRNA',
+    -seq_id     => $seqid,
+    -source     => "$EXE:$VERSION",
+    -start      => $begin,
+    -end        => $end,
+    -strand     => $strand,
+    -score      => $score,  # possibly x[16] but had problems here with '!'
+    -frame      => 0,
+    -tag        => \%tags  );
 }
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-# output a sorted GFF3
+# output a sorted GFF3 and fasta file (if requested)
 
-sub gff_sort {
-  # sort by seqid, then start pos
-  return ($a->[0] cmp $b->[0]) || ($a->[3] <=> $b->[3]);
-}
+my $gff_factory = Bio::Tools::GFF->new(-gff_version=>3);
 
-msg("Found", scalar(@feat), "ribosomal RNA features.");
+msg("Found", scalar(%feat), "ribosomal RNA features.");
 msg("Sorting features and outputting GFF3...");
 print "##gff-version 3\n";
-for my $row (sort { gff_sort } @feat) {
-  print join("\t", @$row),"\n";
+for my $seq_name (sort { $a cmp $b } keys %feat) {
+  for my $feat (sort {$a->start <=> $b->start} @{$feat{$seq_name}}) {
+    print $feat->gff_string($gff_factory), "\n";
+  }
 }
 if ($incseq) {
   print "##FASTA\n";
   open FASTA, '<', $fasta;
   print while (<FASTA>);  # `cat $fasta`
+}
+close(FASTA);
+
+if ($output_fn) {
+  my $counter = 1;
+  # output fasta features if requested
+  my $input_fasta = Bio::SeqIO->new(-format => "fasta", -file => $fasta );
+  my $output_fasta = Bio::SeqIO->new(-format => "fasta", -file => ">$output_fn" );
+  while(my $record = $input_fasta->next_seq) {
+    if(exists $feat{$record->id}) {
+      for my $feat (@{$feat{$record->id}}) {
+        my $feat_record = $record->trunc($feat->location);
+        $feat_record->display_id(sprintf "BARRNAP_%06d", $counter++);
+        my @gene_tags = $feat->get_tag_values("name");
+        $feat_record->desc(sprintf "%s %s %d..%d", $record->id, $gene_tags[0], $feat->start, $feat->end);
+        $output_fasta->write_seq( $feat_record );
+      }
+    }
+  }
 }
 
 #----------------------------------------------------------------------
@@ -197,6 +234,7 @@ sub setOptions {
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.5, DESC=>"Proportional length threshold to reject prediction"},
     {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>1E-6, DESC=>"Similarity e-value cut-off"},
     {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA input sequences in GFF3 output"},
+    {OPT=>"outfasta=s",  VAR=>\$output_fn, DEFAULT=>undef, DESC=>"Output FASTA file of identified rRNA features"},
   );
 
   (!@ARGV) && (usage());
