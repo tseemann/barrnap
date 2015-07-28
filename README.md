@@ -10,7 +10,7 @@ Torsten Seemann - torsten.seemann@gmail.com - @torstenseemann
 
 Barrnap predicts the location of ribosomal RNA genes in genomes.
 It supports bacteria (5S,23S,16S), archaea (5S,5.8S,23S,16S),
-mitochondria (12S,16S) and eukaryotes (5S,5.8S,28S,18S).
+metazoan mitochondria (12S,16S) and eukaryotes (5S,5.8S,28S,18S).
 
 It takes FASTA DNA sequence as input, and write GFF3 as output.
 It uses the new NHMMER tool that comes with HMMER 3.1 for HMM searching in RNA:DNA style.
@@ -90,7 +90,7 @@ Eukarya (80S)
                 28S     SILVA-LSU-Euk
         SSU 40S
                 18S     RF01960
-        Mito
+        Metazoan mitochondria
                 12S     RefSeq (MT-RNR1, s-rRNA, rns)
                 16S     RefSeq (MT-RNR2, l-rRNA, rnl)       
 
@@ -102,25 +102,37 @@ Fungi
                 25S
         SSU ?
                 18S
-        Mito [http://www.ncbi.nlm.nih.gov/nuccore/NC_001224.1]
+        Fungal mitochondria [http://www.ncbi.nlm.nih.gov/nuccore/NC_001224.1]
                 15S 
                 21S (multiple exons)
-                
+
+TODO: Shaun Jackman @sjackman
+Plantae
+	Plastid <http://www.ncbi.nlm.nih.gov/nuccore/NC_009618>
+		LSU
+			4.5S
+			5S
+			23S
+		SSU
+			16S
+	Mitochondria <http://www.ncbi.nlm.nih.gov/nuccore/NC_010303>
+		LSU
+			5S
+			26S
+		SSU
+			18S
 
 TODO:
 Apicoplast [http://www.ncbi.nlm.nih.gov/nuccore/U87145.2]
                 LSU ~2500bp 28S ?
                 SSU ~1500bp 16S ?
 
-Plastid [Shaun Jackman]
-	?
-
 </pre>
 
 ## Where does the name come from?
 
 The name Barrnap was originally derived from _Bacterial/Archaeal Ribosomal RNA Predictor_.
-However it has since been extended to support mitochondrial and eukaryotic rRNAs, and has been
+However it has since been extended to support metazoan mitochondrial and eukaryotic rRNAs, and has been
 given the new backronym _BAsic Rapid Ribosomal RNA Predictor_.
 The project was originally spawned at CodeFest 2013 in Berlin, Germany 
 by Torsten Seemann and Tim Booth.
