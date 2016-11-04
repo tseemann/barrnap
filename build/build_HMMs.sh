@@ -5,7 +5,7 @@ CPUS=$(grep -c bogomips /proc/cpuinfo)
 RFAM="Rfam.seed"
 if [ ! -r "$RFAM" ]; then
   echo "Downloading: $RFAM"
-  wget --quiet ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/Rfam.seed.gz 
+  wget --quiet ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/Rfam.seed.gz
   gunzip $RFAM.gz
 else
   echo "Using existing file: $RFAM"
@@ -28,7 +28,7 @@ fi
 
 # Prepare RFAM for fetches
 echo "Indexing $RFAM"
-rm -f $RFAM.ssi  
+rm -f $RFAM.ssi
 esl-afetch --index $RFAM
 
 echo "Fetching models..."
@@ -38,6 +38,11 @@ echo "Bac"
 esl-afetch $RFAM RF00001 > 5S.bac.aln
 esl-reformat -r stockholm LSU.Bacteria.aln > 23S.bac.aln
 esl-afetch $RFAM RF00177 > 16S.bac.aln
+esl-afetch $RFAM RF01854 > large_srp.bac.aln
+esl-afetch $RFAM RF00169 > small_srp.bac.aln
+esl-afetch $RFAM RF00010 > rnasep_a.bac.aln
+esl-afetch $RFAM RF00011 > rnasep_b.bac.aln
+
 
 # Arch
 echo "Arc"
@@ -45,6 +50,9 @@ esl-afetch $RFAM RF00001 > 5S.arc.aln
 esl-afetch $RFAM RF00002 > 5_8S.arc.aln
 esl-reformat -r stockholm LSU.Archaea.aln > 23S.arc.aln
 esl-afetch $RFAM RF01959 > 16S.arc.aln
+esl-afetch $RFAM RF01857 > srp.arc.aln
+esl-afetch $RFAM RF00373 > rnasep.arc.aln
+
 
 # Euk
 echo "Euk"
@@ -67,7 +75,7 @@ fi
 
 
 for K in arc bac euk mito ; do
-  for T in 5S 5_8S 16S 23S 28S ; do 
+  for T in 5S 5_8S 16S 23S 28S srp small_srp large_srp rnasep rnasep_a rnasep_b; do
     ID="$T.$K"
     if [ -r "$ID.aln" ]; then
       echo "*** $ID ***"
@@ -76,7 +84,7 @@ for K in arc bac euk mito ; do
   done
   cat *.$K.hmm > $K.hmm
   #rm -f *.$K.hmm
-  #hmmpress -f $K.hmm    
+  #hmmpress -f $K.hmm
 done
 
 echo "Databases ready, copy them to the barrnap db/ folder:"
