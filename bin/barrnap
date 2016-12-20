@@ -5,7 +5,7 @@ use Time::Piece;
 use List::Util qw(max);
 use FindBin;
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # global variables
 
 my $EXE = $FindBin::RealScript;
@@ -21,16 +21,24 @@ my %KINGDOM = (map { substr($_,0,1) => $_ } qw(bac arc euk mito));
 my %LENG = (
   "5S_rRNA"  =>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232,
   "5_8S_rRNA"=>156, "18S_rRNA"=>1869, "28S_rRNA"=>2912, "12S_rRNA"=>954,
+
+  # Values derived from smallest sequences found in RFAM for the given ID
+  "small_srp"=>42, # RF00169
+  "large_srp"=>71, # RF01854
+  "srp"=>184,      # RF01857 - Archea
+  "rnasep_a"=>119, # RF00010
+  "rnasep_b"=>149, # RF00011
+  "rnasep"=>125    # RF00373 - Archea
 );
 my $MAXLEN = int( 1.2 * max(values %LENG) );
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # command line options
 
 my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff, $reject, $incseq);
 setOptions();
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # check all is well
 
 msg("This is $EXE $VERSION");
@@ -60,7 +68,7 @@ my $hmmdb = "$DBDIR/$kdom.hmm";
 err("Can't find database: $hmmdb") unless -r $hmmdb;
 msg("Using database: $hmmdb");
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # run the external command
 
 my $fasta = shift @ARGV;
@@ -71,11 +79,11 @@ my $cmd = "$NHMMER --cpu $threads -E $evalue --w_length $MAXLEN  -o /dev/null --
 msg("Command: $cmd");
 my @hits = qx($cmd 2>&1);
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # process the output
 
 my @feat;
-HIT: 
+HIT:
 foreach (@hits) {
   chomp;
   err("nhmmer failed to run - $_") if m/fail|error|core dump|bus error/i;
@@ -98,7 +106,7 @@ foreach (@hits) {
   # check for incomplete alignments
   my $note = '';
   my $len = $end-$begin+1;
-  
+
   if ( $len < int($reject * $LENG{$gene}) ) {
     msg("Rejecting short $len nt predicted $gene. Adjust via --reject option.");
     next HIT;
@@ -116,7 +124,7 @@ foreach (@hits) {
   ];
 }
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # output a sorted GFF3
 
 sub gff_sort {
@@ -164,13 +172,13 @@ sub version {
 
 sub show_citation {
   print STDERR << "EOCITE";
-  
+
 If you use Barrnap in your work, please cite:
 
     Seemann T (2013)
     $EXE $VERSION : $DESC
     $URL
-    
+
 Thank you.
 
 EOCITE
@@ -189,7 +197,7 @@ sub setOptions {
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
-    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bac', 
+    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bac',
        DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
     {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
     {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>8,  DESC=>"Number of threads/cores/CPUs to use"},
@@ -222,15 +230,15 @@ sub usage {
       my $def = defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
       $def = ($def ? ' (default OFF)' : '(default ON)') if $_->{OPT} =~ m/!$/;
       my $opt = $_->{OPT};
-      $opt =~ s/!$//; 
-      $opt =~ s/=s$/ [X]/; 
+      $opt =~ s/!$//;
+      $opt =~ s/=s$/ [X]/;
       $opt =~ s/=i$/ [N]/;
       $opt =~ s/=f$/ [n.n]/;
       printf STDERR "  --%-15s %s%s\n", $opt, $_->{DESC}, $def;
     }
     else {
       print STDERR "$_\n";
-    }      
+    }
   }
   exit(1);
 }

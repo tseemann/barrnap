@@ -1,0 +1,29 @@
+{
+	"bacteria" : [
+		{"source" : "rfam",  "name" : "5S_rRNA",   "file" : "RF00001.hmm"},
+		{"source" : "rfam",  "name" : "16S_rRNA",  "file" : "RF00177.hmm"},
+		{"source" : "silva", "name" : "23S_rRNA",  "file" : "Bacteria.hmm"},
+		{"source" : "rfam",  "name" : "large_srp", "file" : "RF01854.hmm"},
+		{"source" : "rfam",  "name" : "small_srp", "file" : "RF00169.hmm"},
+		{"source" : "rfam",  "name" : "rnasep_a",  "file" : "RF00010.hmm"},
+		{"source" : "rfam",  "name" : "rnasep_b",  "file" : "RF00011.hmm"}
+	],
+	"archaea" : [
+		{"source" : "rfam",  "name" : "5S_rRNA",   "file" : "RF00001.hmm"},
+		{"source" : "rfam",  "name" : "5_8S_rRNA", "file" : "RF00002.hmm"},
+		{"source" : "rfam",  "name" : "16S_rRNA",  "file" : "RF01959.hmm"},
+		{"source" : "silva", "name" : "23S_rRNA",  "file" : "Archaea.hmm"},
+		{"source" : "rfam",  "name" : "rnasep",    "file" : "RF00373.hmm"},
+		{"source" : "rfam",  "name" : "srp",       "file" : "RF01857.hmm"}
+	],
+	"eukaryota" : [
+		{"source" : "rfam",  "name" : "5S_rRNA",   "file" : "RF00001.hmm"},
+		{"source" : "rfam",  "name" : "5_8S_rRNA", "file" : "RF00002.hmm"},
+		{"source" : "rfam",  "name" : "18S_rRNA",  "file" : "RF01960.hmm"},
+		{"source" : "silva", "name" : "28S_rRNA",  "file" : "Eukaryota.hmm"}
+	],
+	"mitocondria" : [
+		{"source" : "curated",  "name" : "16S_rRNA", "file" : "12S.mito.hmm"},
+		{"source" : "curated",  "name" : "12S_rRNA", "file" : "16S.mito.hmm"}
+	]
+}
