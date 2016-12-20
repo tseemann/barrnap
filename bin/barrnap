@@ -23,12 +23,12 @@ my %LENG = (
   "5_8S_rRNA"=>156, "18S_rRNA"=>1869, "28S_rRNA"=>2912, "12S_rRNA"=>954,
 
   # Values derived from smallest sequences found in RFAM for the given ID
-  "small_srp_rRNA"=>42, # RF00169
-  "large_srp_rRNA"=>71, # RF01854
-  "srp_rRNA"=>184,      # RF01857 - Archea
-  "rnasep_a_rRNA"=>119, # RF00010
-  "rnasep_b_rRNA"=>149, # RF00011
-  "rnasep_rRNA"=>125    # RF00373 - Archea
+  "small_srp"=>42, # RF00169
+  "large_srp"=>71, # RF01854
+  "srp"=>184,      # RF01857 - Archea
+  "rnasep_a"=>119, # RF00010
+  "rnasep_b"=>149, # RF00011
+  "rnasep"=>125    # RF00373 - Archea
 );
 my $MAXLEN = int( 1.2 * max(values %LENG) );
 
