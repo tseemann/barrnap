@@ -9,13 +9,13 @@ use FindBin;
 # global variables
 
 my $EXE = $FindBin::RealScript;
-my $VERSION = "0.7";
+my $VERSION = "0.8";
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
-my $URL = 'https://github.com/Victorian-Bioinformatics-Consortium/barrnap';
+my $URL = 'https://github.com/tseemann/barrnap';
 my $DBDIR = "$FindBin::RealBin/../db";
 my $OPSYS = $^O;
-my $NHMMER = "$FindBin::RealBin/../binaries/$OPSYS/nhmmer";
+my $BINDIR = "$FindBin::RealBin/../binaries/$OPSYS";
 
 my %KINGDOM = (map { substr($_,0,1) => $_ } qw(bac arc euk mito));
 my %LENG = (
@@ -37,8 +37,12 @@ msg("This is $EXE $VERSION");
 msg("Written by $AUTHOR");
 msg("Obtained from $URL");
 msg("Detected operating system: $OPSYS");
+msg("Adding $BINDIR to end of PATH");
+$ENV{PATH} .= ":$BINDIR";
 
--x $NHMMER or err("No binary for your OS '$OPSYS' is included. If you have one, copy it to $NHMMER.");
+my($NHMMER) = qx(which -a nhmmer 2> /dev/null);
+$NHMMER or err("Could not find 'nhmmer' executable in PATH");
+chomp $NHMMER;
 msg("Using HMMER binary: $NHMMER");
 
 $threads > 0 or err("Invalid --threads $threads");
@@ -48,7 +52,7 @@ $evalue > 0 or err("Invalid --evalue $evalue");
 msg("Setting evalue cutoff to $evalue");
 
 $lencutoff > 0 or err("Invalid --lencutoff $lencutoff");
-msg("Will tag genes  < $lencutoff of expected length.");
+msg("Will tag genes < $lencutoff of expected length.");
 
 $reject > 0 or err("Invalid --reject cutoff $reject");
 msg("Will reject genes < $reject of expected length.");
