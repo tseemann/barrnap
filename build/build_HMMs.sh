@@ -68,9 +68,9 @@ fi
 
 
 for K in arc bac euk mito ; do
-  for T in 5S 5_8S 12S 16S 23S 28S ; do 
+  for T in 5S 5_8S 12S 16S 23S 18S 28S ; do 
     ID="$T.$K"
-    if [ -r "$ID.aln" ]; then
+    if [ -s "$ID.aln" ]; then
       echo "*** $ID ***"
       hmmbuild --cpu $CPUS --rna -n "${T}_rRNA" $T.$K.hmm $T.$K.aln
     fi
