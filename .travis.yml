@@ -1,0 +1,16 @@
+language: perl
+
+sudo: false
+
+perl:
+    - "5.14"
+    
+install:
+    - "cpanm --quiet --notest Time::Piece List::Util FindBin"
+    - "export PATH=$PWD/bin:$PATH"
+
+script:
+    - "barrnap --version"
+    - "barrnap --help"
+    - "barrnap --citation"
+    - "! barrnap --doesnotexist"
