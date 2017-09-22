@@ -9,7 +9,7 @@ use FindBin;
 # global variables
 
 my $EXE = $FindBin::RealScript;
-my $VERSION = "0.8";
+my $VERSION = "0.9-dev";
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
 my $URL = 'https://github.com/tseemann/barrnap';
@@ -27,7 +27,7 @@ my $MAXLEN = int( 1.2 * max(values %LENG) );
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
-my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff, $reject, $incseq);
+my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff, $reject, $incseq, $outseq);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -58,7 +58,7 @@ $reject > 0 or err("Invalid --reject cutoff $reject");
 msg("Will reject genes < $reject of expected length.");
 
 my $kdom = $KINGDOM{ lc substr($kingdom,0,1) } or
-  err("I don't recognise --kingdom '$kingdom'. Try: bac arc euk mito");
+  err("I don't recognise --kingdom '$kingdom'. Try:", values(%KINGDOM) );
 
 my $hmmdb = "$DBDIR/$kdom.hmm";
 err("Can't find database: $hmmdb") unless -r $hmmdb;
@@ -71,13 +71,14 @@ my $fasta = shift @ARGV;
 $fasta && -r $fasta or err("Usage: $EXE <file.fasta>");
 
 msg("Scanning $fasta for $kdom rRNA genes... please wait");
-my $cmd = "$NHMMER --cpu $threads -E $evalue --w_length $MAXLEN  -o /dev/null --tblout /dev/stdout \Q$hmmdb\E \Q$fasta\E";
+my $cmd = "$NHMMER --cpu $threads -E $evalue --w_length $MAXLEN -o /dev/null --tblout /dev/stdout \Q$hmmdb\E \Q$fasta\E";
 msg("Command: $cmd");
 my @hits = qx($cmd 2>&1);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # process the output
 
+my @hitseq;
 my @feat;
 HIT: 
 foreach (@hits) {
@@ -140,6 +141,15 @@ if ($incseq) {
   print while (<FASTA>);  # `cat $fasta`
 }
 
+if ($outseq) {
+  msg("Saving hit sequences to '$outseq'");
+  open my $OUT, '>', $outseq;
+  for my $h (@hitseq) {
+    print $OUT ">",$h->[0],"\n",$h->[1],"\n";
+  }
+  close $OUT;  
+}
+
 #----------------------------------------------------------------------
 
 sub msg {
@@ -171,7 +181,7 @@ sub show_citation {
   
 If you use Barrnap in your work, please cite:
 
-    Seemann T (2013)
+    Seemann T (2017)
     $EXE $VERSION : $DESC
     $URL
     
@@ -193,19 +203,19 @@ sub setOptions {
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
-    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bac', 
-       DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
+    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bac', DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
     {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
     {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>8,  DESC=>"Number of threads/cores/CPUs to use"},
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to label as partial"},
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.5, DESC=>"Proportional length threshold to reject prediction"},
     {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>1E-6, DESC=>"Similarity e-value cut-off"},
     {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA input sequences in GFF3 output"},
+#    {OPT=>"outseq!",  VAR=>\$outseq, DEFAULT=>'', DESC=>"Save hits to this FASTA file"},
   );
 
-  (!@ARGV) && (usage());
+  (!@ARGV) && (usage(1));
 
-  &GetOptions(map {$_->{OPT}, $_->{VAR}} grep { ref } @Options) || usage();
+  &GetOptions(map {$_->{OPT}, $_->{VAR}} grep { ref } @Options) || usage(1);
 
   # Now setup default values.
   foreach (@Options) {
@@ -218,9 +228,14 @@ sub setOptions {
 #----------------------------------------------------------------------
 
 sub usage {
-  print STDERR "Synopsis:\n  $EXE $VERSION - $DESC\n";
-  print STDERR "Author:\n  $AUTHOR\n";
-  print STDERR "Usage:\n  $EXE [options] <chromosomes.fasta>\n";
+  my($exitcode) = @_;
+  $exitcode = 0 if $exitcode eq 'help'; # what gets passed by getopt func ref
+  $exitcode ||= 0;
+  select STDERR if $exitcode; # write to STDERR if exitcode is error
+
+  print "Synopsis:\n  $EXE $VERSION - $DESC\n";
+  print "Author:\n  $AUTHOR\n";
+  print "Usage:\n  $EXE [options] <chromosomes.fasta>\n";
   foreach (@Options) {
     if (ref) {
       my $def = defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
@@ -230,13 +245,13 @@ sub usage {
       $opt =~ s/=s$/ [X]/; 
       $opt =~ s/=i$/ [N]/;
       $opt =~ s/=f$/ [n.n]/;
-      printf STDERR "  --%-15s %s%s\n", $opt, $_->{DESC}, $def;
+      printf "  --%-15s %s%s\n", $opt, $_->{DESC}, $def;
     }
     else {
-      print STDERR "$_\n";
+      print "$_\n";
     }      
   }
-  exit(1);
+  exit($exitcode);
 }
 
 #----------------------------------------------------------------------
