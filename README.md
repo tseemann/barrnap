@@ -19,30 +19,40 @@ It uses the new NHMMER tool that comes with HMMER 3.1 for HMM searching in RNA:D
 NHMMER binaries for 64-bit Linux and Mac OS X are included and will be auto-detected.
 Multithreading is supported and one can expect roughly linear speed-ups with more CPUs.
 
-## Download
+## Installation
 
-* Tarballs: https://github.com/tseemann/barrnap/releases/
-* Source: https://github.com/tseemann/barrnap
+### Conda
+Install [Conda](https://conda.io/docs/) or [Miniconda](https://conda.io/miniconda.html):
 
-## Install
+    conda -c bioconda install barrnap
+    barrnap --version
 
-    % cd $HOME
-    % tar zxvf barrnap-0.X.tar.gz
-    % echo "PATH=$PATH:$HOME/barrnap-0.x/bin" >> .bashrc
-    (logout and log back in)
+### Homebrew
+Install [HomeBrew](http://brew.sh/) (Mac OS X) or [LinuxBrew](http://brew.sh/linuxbrew/) (Linux).
+
+    brew tap brewsci/bio
+    brew install barrnap
+    barrnap --help
+
+### Source
+This will install the latest version direct from Github. You'll need to add the ```bin``` directory to your PATH.
+
+    cd $HOME
+    tar zxvf barrnap-0.X.tar.gz
+    barrnap-0.X/barrnap -h
 
 ## Usage
 
     % barrnap --quiet examples/small.fna
     ##gff-version 3
-    P.marinus	barrnap:0.7	rRNA	353314	354793	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
-    P.marinus	barrnap:0.7	rRNA	355464	358334	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
-    P.marinus	barrnap:0.7	rRNA	358433	358536	7.5e-07	+	.	Name=5S_rRNA;product=5S ribosomal RNA
+    P.marinus	barrnap:0.8	rRNA	353314	354793	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+    P.marinus	barrnap:0.8	rRNA	355464	358334	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
+    P.marinus	barrnap:0.8	rRNA	358433	358536	7.5e-07	+	.	Name=5S_rRNA;product=5S ribosomal RNA
 
     % barrnap -q -k mito examples/mitochondria.fna 
     ##gff-version 3
-    AF346967.1	barrnap:0.7	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
-    AF346967.1	barrnap:0.7	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
+    AF346967.1	barrnap:0.8	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
+    AF346967.1	barrnap:0.8	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
 
 ## Caveats
 
