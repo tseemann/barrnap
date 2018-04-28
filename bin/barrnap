@@ -8,8 +8,8 @@ use File::Temp;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
+my $VERSION = "0.9";
 my $EXE = $FindBin::RealScript;
-my $VERSION = "0.9-dev";
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
