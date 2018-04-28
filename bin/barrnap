@@ -1,7 +1,6 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-use Time::Piece;
 use List::Util qw(max);
 use FindBin;
 
@@ -154,8 +153,7 @@ if ($outseq) {
 
 sub msg {
   return if $quiet;
-  my $t = localtime;
-  my $line = "[".$t->hms."] @_\n";
+  my $line = "[$EXE] @_\n";
   print STDERR $line;
 }
 
