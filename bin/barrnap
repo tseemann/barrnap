@@ -40,10 +40,8 @@ msg("Detected operating system: $OPSYS");
 msg("Adding $BINDIR to end of PATH");
 $ENV{PATH} .= ":$BINDIR";
 
-my($NHMMER) = qx(which -a nhmmer 2> /dev/null);
-$NHMMER or err("Could not find 'nhmmer' executable in PATH");
-chomp $NHMMER;
-msg("Using HMMER binary: $NHMMER");
+msg("Checking for dependencies:");
+require_exe('nhmmer', 'bedtools');
 
 $threads > 0 or err("Invalid --threads $threads");
 msg("Will use $threads threads");
@@ -84,15 +82,17 @@ $fasta && -r $fasta or err("No input file on command line or stdin");
 # run the external command
 
 msg("Scanning $fasta for $kdom rRNA genes... please wait");
-my $cmd = "$NHMMER --cpu $threads -E $evalue --w_length $MAXLEN -o /dev/null --tblout /dev/stdout \Q$hmmdb\E \Q$fasta\E";
+my $opts = "--cpu $threads -E $evalue --w_length $MAXLEN -o /dev/null --tblout /dev/stdout";
+my $cmd = "nhmmer $opts '$hmmdb' '$fasta'";
 msg("Command: $cmd");
 my @hits = qx($cmd 2>&1);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # process the output
 
-my @hitseq;
+my %hitname;
 my @feat;
+my @bed;
 HIT: 
 foreach (@hits) {
   chomp;
@@ -102,9 +102,13 @@ foreach (@hits) {
   my @x = split ' ', $_;
   err("bad line in nhmmer output - @x") unless defined $x[6] and $x[6] =~ m/^\d+$/;
 
+  # massage to GFF
   my($begin,$end,$strand) = $x[6] < $x[7] ? ($x[6],$x[7],'+') : ($x[7],$x[6],'-');
   my($seqid, $gene, $prod) = ($x[0], $x[2], $x[2]);
   my $score = defined $x[12]  ? $x[12] : '.';
+
+  # record hits for --outseq retrieval later
+  $hitname{"$seqid/$begin:$end($strand)"} = $prod;
 
   # check if hit makes sense to us
   exists $LENG{$gene} or err("Detected unknown gene '$gene' in scan, aborting.");
@@ -125,6 +129,9 @@ foreach (@hits) {
     $note = sprintf "aligned only %d percent of the $prod", (100*$len/$LENG{$gene});
     $prod .= " (partial)";
   }
+
+  # keep track of good hits for retrievel later
+  push @bed, [ $seqid, $begin-1, $end, $gene, 100, $strand ];
 
   msg("Found:", $gene, $seqid, "L=$len/$LENG{$gene}", "$begin..$end", $strand, $prod);
   my $tags = "Name=$gene;product=$prod";
@@ -155,16 +162,41 @@ if ($incseq) {
 }
 
 if ($outseq) {
-  msg("Saving hit sequences to '$outseq'");
-  open my $OUT, '>', $outseq;
-  for my $h (@hitseq) {
-    print $OUT ">",$h->[0],"\n",$h->[1],"\n";
+  msg("Writing hit sequences to: $outseq");
+  my $bed = File::Temp->new();
+  for my $b (@bed) {
+    print $bed join("\t", @$b),"\n";
   }
-  close $OUT;  
+  $bed->seek(0, SEEK_END); # rewind
+  my $cmd = "bedtools getfasta -s -name+ -fo '$outseq' -fi '$fasta' -bed '".$bed->filename."'";
+  msg("Running: $cmd");
+  system($cmd);
+}
+
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# final cleanup
+
+msg("Done.");
+
+#----------------------------------------------------------------------
+sub require_exe {
+  for my $exe (@_) {
+    my($which) = qx(which $exe 2> /dev/null);
+    $which or err("Can not find required '$exe' in PATH");
+    chomp $which;
+    msg("Found $exe - $which");
+  }
 }
 
 #----------------------------------------------------------------------
+sub revcom {
+  my($s) = @_;
+  $s = reverse($s);
+  $s =~ tr/ATCGatcg/TAGCtagc/;
+  return $s;
+}
 
+#----------------------------------------------------------------------
 sub msg {
   return if $quiet;
   my $line = "[$EXE] @_\n";
@@ -172,7 +204,6 @@ sub msg {
 }
 
 #----------------------------------------------------------------------
-
 sub err {
   $quiet=0;
   msg("ERROR:", @_);
@@ -180,14 +211,12 @@ sub err {
 }
 
 #----------------------------------------------------------------------
-
 sub version {
   print STDERR "$EXE $VERSION\n";
   exit;
 }
 
 #----------------------------------------------------------------------
-
 sub show_citation {
   print STDERR << "EOCITE";
   
@@ -221,8 +250,8 @@ sub setOptions {
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to label as partial"},
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.25, DESC=>"Proportional length threshold to reject prediction"},
     {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>1E-6, DESC=>"Similarity e-value cut-off"},
-    {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA input sequences in GFF3 output"},
-#    {OPT=>"outseq!",  VAR=>\$outseq, DEFAULT=>'', DESC=>"Save hits to this FASTA file"},
+    {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA _input_ sequences in GFF3 output"},
+    {OPT=>"outseq=s",  VAR=>\$outseq, DEFAULT=>'', DESC=>"Save rRNA hit seqs to this FASTA file"},
   );
 
 #  (!@ARGV) && (usage(1));

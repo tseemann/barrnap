@@ -27,3 +27,4 @@ script:
     - "barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '"  
     - "barrnap --threads 2 examples/small.fna"
     - "barrnap -q --incseq examples/small.fna | grep '^>'"
+    - "barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa"
