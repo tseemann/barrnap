@@ -17,9 +17,9 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 ## Installation
 
 ### Requirements
-* [Perl 5.xx](https://dev.perl.org/perl5/) (core modules only), 
-* [nhmmer](https://hmmer.org/) (part of HMMER 3.x), 
-* [bedtools](http://bedtools.readthedocs.io/en/latest/). 
+* [Perl 5.xx](https://dev.perl.org/perl5/) (core modules only)
+* [nhmmer](https://hmmer.org/) (part of HMMER 3.x)
+* [bedtools](http://bedtools.readthedocs.io/en/latest/)
 
 ### Conda
 Install [Conda](https://conda.io/docs/) or [Miniconda](https://conda.io/miniconda.html):
@@ -86,12 +86,6 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 
 Barrnap does not do anything fancy. It has HMM models for each different rRNA gene. 
 They are built from full length seed alignments. 
-
-## License
-
-* Barrnap: [GPLv3](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE)
-* Rfam: [CC0](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE.Rfam)
-* SILVA: [Free for academic use](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE.SILVA)
 
 ## Comparison with RNAmmer
 
@@ -174,6 +168,12 @@ However it has since been extended to support mitochondrial and eukaryotic rRNAs
 given the new backronym _BAsic Rapid Ribosomal RNA Predictor_.
 The project was originally spawned at CodeFest 2013 in Berlin, Germany 
 by Torsten Seemann and Tim Booth.
+
+## License
+
+* Barrnap: [GPLv3](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE)
+* Rfam: [CC0](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE.Rfam)
+* SILVA: [Free for academic use](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE.SILVA)
 
 ## Author
 
