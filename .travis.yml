@@ -11,12 +11,9 @@ addons:
 perl:
   - "5.26"
   
-before_install:
-  - "wget -q http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar.gz"
-  
 install:
-  - "tar zxf hmmer-3.1b2-linux-intel-x86_64.tar.gz"
-  - "export PATH=$PWD/bin:$PWD/hmmer-3.1b2-linux-intel-x86_64/binaries:$PATH"
+  - "export PATH=$PWD/bin:$PATH"
+  - "sed -i~ -e 's/-name+/-name/' bin/barrnap"
     
 script:
   - "barrnap --version"
@@ -37,4 +34,3 @@ script:
   - "barrnap --threads 2 examples/small.fna"
   - "barrnap -q --incseq examples/small.fna | grep '^>'"
   - "barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa"
-
