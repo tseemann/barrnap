@@ -2,29 +2,39 @@ language: perl
 
 sudo: false
 
-perl:
-    - "5.14"
-    
-install:
-    - "cpanm --quiet --notest Time::Piece List::Util FindBin"
-    - "export PATH=$PWD/bin:$PATH"
+addons:
+  apt:
+    packages:
+    - hmmer
+    - bedtools
 
+perl:
+  - "5.26"
+  
+before_install:
+  - "wget -q http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar.gz"
+  
+install:
+  - "tar zxf hmmer-3.1b2-linux-intel-x86_64.tar.gz"
+  - "export PATH=$PWD/bin:$PWD/hmmer-3.1b2-linux-intel-x86_64/binaries:$PATH"
+    
 script:
-    - "barrnap --version"
-    - "barrnap --help"
-    - "barrnap --citation"
-    - "! barrnap --doesnotexist"
-    - "barrnap 2>&1 | grep 'ERROR: No input file'"
-    - "barrnap -q --kingdom bac  examples/bacteria.fna"
-    - "barrnap -q --kingdom arc  examples/bacteria.fna"
-    - "barrnap -q --kingdom mito examples/mitochondria.fna"
-    - "barrnap -q --kingdom euk  examples/fungus.fna"
-    - "! barrnap examples/empty.fna"
-    - "! barrnap examples/null.fna"
-    - "barrnap -q examples/small.fna | grep 16S_rRNA"
-    - "barrnap -q < examples/small.fna | grep 16S_rRNA"
-    - "barrnap -q - < examples/small.fna | grep 16S_rRNA"
-    - "barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '"  
-    - "barrnap --threads 2 examples/small.fna"
-    - "barrnap -q --incseq examples/small.fna | grep '^>'"
-    - "barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa"
+  - "barrnap --version"
+  - "barrnap --help"
+  - "barrnap --citation"
+  - "! barrnap --doesnotexist"
+  - "barrnap 2>&1 | grep 'ERROR: No input file'"
+  - "barrnap -q --kingdom bac  examples/bacteria.fna"
+  - "barrnap -q --kingdom arc  examples/bacteria.fna"
+  - "barrnap -q --kingdom mito examples/mitochondria.fna"
+  - "barrnap -q --kingdom euk  examples/fungus.fna"
+  - "! barrnap examples/empty.fna"
+  - "! barrnap examples/null.fna"
+  - "barrnap -q examples/small.fna | grep 16S_rRNA"
+  - "barrnap -q < examples/small.fna | grep 16S_rRNA"
+  - "barrnap -q - < examples/small.fna | grep 16S_rRNA"
+  - "barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '"  
+  - "barrnap --threads 2 examples/small.fna"
+  - "barrnap -q --incseq examples/small.fna | grep '^>'"
+  - "barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa"
+
