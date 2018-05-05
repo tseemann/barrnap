@@ -24,24 +24,23 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 ### Conda
 Install [Conda](https://conda.io/docs/) or [Miniconda](https://conda.io/miniconda.html):
 ```
-conda -c bioconda -c conda-forge install barrnap
-barrnap --version
+conda install -c bioconda -c conda-forge barrnap
 ```
 
 ### Homebrew
 Install [HomeBrew](http://brew.sh/) (Mac OS X) or [LinuxBrew](http://brew.sh/linuxbrew/) (Linux).
 ```
 brew install brewsci/bio/barrnap
-barrnap --help
 ```
 
 ### Source
 This will install the latest version direct from Github. 
-You'll need to add the `bin` directory to your PATH.
+You'll need to add the `bin` directory to your `PATH`.
 ```
 cd $HOME
-tar zxvf barrnap-0.X.tar.gz
-barrnap-0.X/barrnap -h
+git clone https://github.com/tseemann/barrnap.git
+cd barrnap
+./barrnap --help
 ```
 
 ## Usage
