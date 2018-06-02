@@ -28,7 +28,7 @@ conda install -c bioconda -c conda-forge barrnap
 ```
 
 ### Homebrew
-Install [HomeBrew](http://brew.sh/) (Mac OS X) or [LinuxBrew](http://brew.sh/linuxbrew/) (Linux).
+Install [Homebrew](http://brew.sh/) (macOS) or [Linuxbrew](http://brew.sh/linuxbrew/) (Linux).
 ```
 brew install brewsci/bio/barrnap
 ```
