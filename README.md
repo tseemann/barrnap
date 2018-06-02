@@ -19,7 +19,7 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 ### Requirements
 * [Perl 5.xx](https://dev.perl.org/perl5/) (core modules only)
 * [nhmmer](https://hmmer.org/) (part of HMMER 3.x)
-* [bedtools](http://bedtools.readthedocs.io/en/latest/)
+* [bedtools >= 2.27.0](http://bedtools.readthedocs.io/en/latest/)
 
 ### Conda
 Install [Conda](https://conda.io/docs/) or [Miniconda](https://conda.io/miniconda.html):
