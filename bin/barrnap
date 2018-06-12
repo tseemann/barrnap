@@ -168,7 +168,7 @@ if ($outseq) {
     print $bed join("\t", @$b),"\n";
   }
   $bed->seek(0, SEEK_END); # rewind
-  my $cmd = "bedtools getfasta -s -name+ -fo '$outseq' -fi '$fasta' -bed '".$bed->filename."'";
+  my $cmd = "bedtools getfasta -s -name -fo '$outseq' -fi '$fasta' -bed '".$bed->filename."'";
   msg("Running: $cmd");
   system($cmd);
 }
