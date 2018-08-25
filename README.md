@@ -39,7 +39,7 @@ You'll need to add the `bin` directory to your `PATH`.
 ```
 cd $HOME
 git clone https://github.com/tseemann/barrnap.git
-cd barrnap
+cd barrnap/bin
 ./barrnap --help
 ```
 
