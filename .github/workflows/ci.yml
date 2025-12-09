@@ -20,29 +20,61 @@ jobs:
 
     - name: Install dependencies
       run: |
-        set -e
-        #sudo apt-get update
+        sudo apt-get update
         sudo apt-get install -y hmmer bedtools
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
         ls -1s "$GITHUB_WORKSPACE/examples/"
 
-    - name: Run tests
-      run: |
-        barrnap --version
-        barrnap --help
-        barrnap --citation
-        ! barrnap --doesnotexist
-        barrnap 2>&1 | grep 'ERROR: No input file'
-        barrnap -q --kingdom bac  examples/bacteria.fna
-        barrnap -q --kingdom arc  examples/bacteria.fna
-        barrnap -q --kingdom mito examples/mitochondria.fna
-        barrnap -q --kingdom euk  examples/fungus.fna
-        ! barrnap examples/empty.fna
-        ! barrnap examples/null.fna
-        barrnap -q examples/small.fna | grep 16S_rRNA
-        barrnap -q < examples/small.fna | grep 16S_rRNA
-        barrnap -q - < examples/small.fna | grep 16S_rRNA
-        barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
-        barrnap --threads 2 examples/small.fna
-        barrnap -q --incseq examples/small.fna | grep '^>'
-        barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa
+    - name: Run test
+      run: barrnap --version
+      
+    - name: Run test
+      run: barrnap --help
+      
+    - name: Run test
+      run: barrnap --citation
+      
+    - name: Run test
+      run: ! barrnap --doesnotexist
+      
+    - name: Run test
+      run: barrnap 2>&1 | grep 'ERROR: No input file'
+      
+    - name: Run test
+      run: barrnap -q --kingdom bac  examples/bacteria.fna
+      
+    - name: Run test
+      run: barrnap -q --kingdom arc  examples/bacteria.fna
+      
+    - name: Run test
+      run: barrnap -q --kingdom mito examples/mitochondria.fna
+
+    - name: Run test    
+      run: barrnap -q --kingdom euk  examples/fungus.fna
+
+    - name: Run test
+      run: ! barrnap examples/empty.fna
+
+    - name: Run test
+      run: ! barrnap examples/null.fna
+
+    - name: Run test
+      run: barrnap -q examples/small.fna | grep 16S_rRNA
+
+    - name: Run test
+      run: barrnap -q < examples/small.fna | grep 16S_rRNA
+
+    - name: Run test
+      run: barrnap -q - < examples/small.fna | grep 16S_rRNA
+
+    - name: Run test
+      run: barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
+
+    - name: Run test
+      run: barrnap --threads 2 examples/small.fna
+
+    - name: Run test
+      run: barrnap -q --incseq examples/small.fna | grep '^>'
+
+    - name: Run test
+      run: barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa
