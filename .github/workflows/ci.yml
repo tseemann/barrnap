@@ -20,10 +20,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
+        set -e
+        #sudo apt-get update
         sudo apt-get install -y hmmer bedtools
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-        ls -1s "$GITHUBWORKSPACE/examples/"
+        ls -1s "$GITHUB_WORKSPACE/examples/"
 
     - name: Run tests
       run: |
