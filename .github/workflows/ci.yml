@@ -9,25 +9,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Perl
       uses: shogo82148/actions-setup-perl@v1
       with:
         perl-version: '5.26'
-    
+
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y hmmer bedtools
-    
+
     - name: Prepare environment
       run: |
         export PATH=$PWD/bin:$PATH
         sed -i~ -e 's/-name+/-name/' bin/barrnap
-    
+
     - name: Run tests
       run: |
         export PATH=$PWD/bin:$PATH
