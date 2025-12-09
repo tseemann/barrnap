@@ -1,24 +1,26 @@
 #!/bin/bash
 
-CPUS=$(grep -c bogomips /proc/cpuinfo)
+CPUS=$(nproc)
 CURL="curl"
-GUNZIP="gzip -c"
+GUNZIP="gunzip"
 
 RFAM="Rfam.seed"
-RFAMURL="ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/${RFAM}.gz"
+RFAMURL="https://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/${RFAM}.gz"
+# RFAM 14.9 as of 2023-09-16
 if [ ! -r "$RFAM" ]; then
   echo "Downloading: $RFAM"
-  $CURL "$RFAMURL" | $GUNZIP -c > "$RFAM"
+  $CURL "$RFAMURL" | $GUNZIP -c - > "$RFAM"
 else
   echo "Using existing file: $RFAM"
 fi
 
+# https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA_138.1_LSURef_tax_silva_full_align_trunc.fasta.gz
 # 23S only as 16S is in RFAM
-SILVA="SILVA_128_LSURef_tax_silva_full_align_trunc.fasta"
-SILVAURL="http://www.arb-silva.de/fileadmin/silva_databases/current/Exports/${SILVA}.gz"
+SILVA="SILVA_138.1_LSURef_tax_silva_full_align_trunc.fasta"
+SILVAURL="https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/${SILVA}.gz"
 if [ ! -r "$SILVA" ]; then
   echo "Downloading: $SILVA"
-  $CURL "$SILVAURL" | $GUNZIP -c > "$SILVA"
+  $CURL "$SILVAURL" | $GUNZIP -c - > "$SILVA"
 else
   echo "Using existing file: $SILVA"
 fi

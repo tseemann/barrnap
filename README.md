@@ -172,7 +172,7 @@ by Torsten Seemann and Tim Booth.
 
 * Barrnap: [GPLv3](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE)
 * Rfam: [CC0](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE.Rfam)
-* SILVA: [Free for academic use](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE.SILVA)
+* SILVA: [Creative Commons Attribution 4.0 (CC-BY 4.0](https://www.arb-silva.de/silva-license-information/)
 
 ## Author
 
