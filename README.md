@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/tseemann/barrnap.svg?branch=master)](https://travis-ci.org/tseemann/barrnap) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [](#lang-au)
+[![Build Status](https://travis-ci.org/tseemann/barrnap.svg?branch=master)](https://travis-ci.org/tseemann/barrnap) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Conda](https://img.shields.io/conda/dn/bioconda/barrnap.svg)](https://anaconda.org/bioconda/barrnap) [![GitHub release](https://img.shields.io/github/release/tseemann/barrnap.svg)](https://github.com/tseemann/barrnap/releases) [](#lang-au)
 
 # Barrnap
 
