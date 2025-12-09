@@ -16,14 +16,14 @@ jobs:
     - name: Set up Perl
       uses: shogo82148/actions-setup-perl@v1
       with:
-        perl-version: '5.38'
+        perl-version: '5.26'
 
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y hmmer bedtools
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-        ls -1s "$GITHUB_WORKSPACE/examples/"
+        # ls -1s "$GITHUB_WORKSPACE/examples/"
 
     - name: Run test
       run: barrnap --version
