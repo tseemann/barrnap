@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Perl
+      uses: shogo82148/actions-setup-perl@v1
+      with:
+        perl-version: '5.26'
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y hmmer bedtools
+        
+    - name: Configure environment
+      run: |
+        export PATH=$PWD/bin:$PATH
+        echo "$PWD/bin" >> $GITHUB_PATH
+        sed -i~ -e 's/-name+/-name/' bin/barrnap
+        
+    - name: Run tests
+      run: |
+        barrnap --version
+        barrnap --help
+        barrnap --citation
+        ! barrnap --doesnotexist
+        barrnap 2>&1 | grep 'ERROR: No input file'
+        barrnap -q --kingdom bac  examples/bacteria.fna
+        barrnap -q --kingdom arc  examples/bacteria.fna
+        barrnap -q --kingdom mito examples/mitochondria.fna
+        barrnap -q --kingdom euk  examples/fungus.fna
+        ! barrnap examples/empty.fna
+        ! barrnap examples/null.fna
+        barrnap -q examples/small.fna | grep 16S_rRNA
+        barrnap -q < examples/small.fna | grep 16S_rRNA
+        barrnap -q - < examples/small.fna | grep 16S_rRNA
+        barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
+        barrnap --threads 2 examples/small.fna
+        barrnap -q --incseq examples/small.fna | grep '^>'
+        barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa

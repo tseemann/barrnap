@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/tseemann/barrnap.svg?branch=master)](https://travis-ci.org/tseemann/barrnap) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [](#lang-au)
+[![CI](https://github.com/tseemann/barrnap/actions/workflows/ci.yml/badge.svg)](https://github.com/tseemann/barrnap/actions/workflows/ci.yml) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [](#lang-au)
 
 # Barrnap
 
