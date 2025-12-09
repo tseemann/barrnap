@@ -23,14 +23,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y hmmer bedtools
 
-    - name: Prepare environment
+    - name: Prepare path
       run: |
-        export PATH=$PWD/bin:$PATH
-        sed -i~ -e 's/-name+/-name/' bin/barrnap
+        echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
 
     - name: Run tests
       run: |
-        export PATH=$PWD/bin:$PATH
         barrnap --version
         barrnap --help
         barrnap --citation
