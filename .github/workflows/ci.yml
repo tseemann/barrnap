@@ -26,7 +26,6 @@ jobs:
         
     - name: Configure environment
       run: |
-        export PATH=$PWD/bin:$PATH
         echo "$PWD/bin" >> $GITHUB_PATH
         sed -i~ -e 's/-name+/-name/' bin/barrnap
         
