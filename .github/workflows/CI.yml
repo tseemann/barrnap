@@ -38,13 +38,13 @@ jobs:
           barrnap --listdb
           barrnap --help
           barrnap --citation
-        
+
       - name: Run tests
-#          barrnap 2>&1 | grep 'ERROR: No input file'
           barrnap -q --kingdom bac  examples/bacteria.fna
           barrnap -q --kingdom arc  examples/bacteria.fna
           barrnap -q --kingdom mito examples/mitochondria.fna
           barrnap -q --kingdom euk  examples/fungus.fna
+#          barrnap 2>&1 | grep 'ERROR: No input file'
 #          ! barrnap examples/empty.fna
 #          ! barrnap examples/null.fna
           barrnap -q examples/small.fna | grep 16S_rRNA
