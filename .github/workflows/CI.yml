@@ -29,8 +29,8 @@ jobs:
         
       - name: Check tools
         run: |
-          nhmmer -h | grep HMMER
           bedtools --version
+          nhmmer -h | grep HMMER
 
       - name: Simple tests
         run: |
