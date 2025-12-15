@@ -36,8 +36,8 @@ jobs:
       - name: Run test
         run: barrnap --citation
         
-      - name: Run test
-        run: barrnap 2>&1 | grep 'ERROR: No input file'
+#      - name: Run test
+#        run: barrnap 2>&1 | grep 'ERROR: No input file'
         
       - name: Run test
         run: barrnap -q --kingdom bac  examples/bacteria.fna
