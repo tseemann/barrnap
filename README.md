@@ -1,4 +1,8 @@
-[![CI](https://github.com/tseemann/barrnap/workflows/CI/badge.svg)](https://github.com/tseemann/barrnap/actions) [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Conda](https://img.shields.io/conda/dn/bioconda/barrnap.svg)](https://anaconda.org/bioconda/barrnap) [![GitHub release](https://img.shields.io/github/release/tseemann/barrnap.svg)](https://github.com/tseemann/barrnap/releases) [![Language: Perl 5](https://img.shields.io/badge/Language-Perl%205-blue.svg)](https://www.perl.org/) [](#lang-au)
+[![CI](https://github.com/tseemann/barrnap/workflows/CI/badge.svg)](https://github.com/tseemann/barrnap/actions)
+[![GitHub release](https://img.shields.io/github/release/tseemann/barrnap.svg)](https://github.com/tseemann/barrnap/releases)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Conda](https://img.shields.io/conda/dn/bioconda/barrnap.svg)](https://anaconda.org/bioconda/barrnap)
+[![Language: Perl 5](https://img.shields.io/badge/Language-Perl%205-blue.svg)](https://www.perl.org/)
 
 # Barrnap
 
