@@ -25,7 +25,8 @@ jobs:
           auto-update-conda: true
 
       - name: Add to PATH
-        run: echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+        run: |
+          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
       - name: Check tools
         run: |
@@ -39,19 +40,18 @@ jobs:
           barrnap --help
           barrnap --citation
 
-       - name: Run tests
-         run: |
-           barrnap -q --kingdom bac  examples/bacteria.fna
-           barrnap -q --kingdom arc  examples/bacteria.fna
-           barrnap -q --kingdom mito examples/mitochondria.fna
-           barrnap -q --kingdom euk  examples/fungus.fna
-           # barrnap 2>&1 | grep 'ERROR: No input file'
-           # ! barrnap examples/empty.fna
-           # ! barrnap examples/null.fna
-           "barrnap -q examples/small.fna | grep 16S_rRNA"
-           barrnap -q < examples/small.fna | grep 16S_rRNA
-           barrnap -q - < examples/small.fna | grep 16S_rRNA
-           barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
-           barrnap --threads 2 examples/small.fna
-           barrnap -q --incseq examples/small.fna | grep '^>'
-           barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa
+      - name: Main tests
+        run: |
+          barrnap -q --kingdom arc  examples/bacteria.fna
+          barrnap -q --kingdom mito examples/mitochondria.fna
+          barrnap -q --kingdom euk  examples/fungus.fna
+          # barrnap 2>&1 | grep 'ERROR: No input file'
+          # ! barrnap examples/empty.fna
+          # ! barrnap examples/null.fna
+          "barrnap -q examples/small.fna | grep 16S_rRNA"
+          barrnap -q < examples/small.fna | grep 16S_rRNA
+          barrnap -q - < examples/small.fna | grep 16S_rRNA
+          barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
+          barrnap --threads 2 examples/small.fna
+          barrnap -q --incseq examples/small.fna | grep '^>'
+          barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa
