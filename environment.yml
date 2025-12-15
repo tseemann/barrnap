@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - perl
+  - perl-bioperl >=1.7.2
+  - hmmer >=3.1b2
+  - bedtools
+  - infernal >=1.1.2
