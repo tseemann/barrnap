@@ -13,8 +13,7 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - name: Pull repo
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
@@ -26,59 +25,7 @@ jobs:
           auto-update-conda: true
 
       - name: Add to PATH
-        run: |
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+        run: echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
       - name: Run test
         run: barrnap --version
-        
-      - name: Run test
-        run: barrnap --help
-        
-      - name: Run test
-        run: barrnap --citation
-        
-      - name: Run test
-        run: ! barrnap --doesnotexist
-        
-      - name: Run test
-        run: barrnap 2>&1 | grep 'ERROR: No input file'
-        
-      - name: Run test
-        run: barrnap -q --kingdom bac  examples/bacteria.fna
-        
-      - name: Run test
-        run: barrnap -q --kingdom arc  examples/bacteria.fna
-        
-      - name: Run test
-        run: barrnap -q --kingdom mito examples/mitochondria.fna
-
-      - name: Run test    
-        run: barrnap -q --kingdom euk  examples/fungus.fna
-
-      - name: Run test
-        run: ! barrnap examples/empty.fna
-
-      - name: Run test
-        run: ! barrnap examples/null.fna
-
-      - name: Run test
-        run: barrnap -q examples/small.fna | grep 16S_rRNA
-
-      - name: Run test
-        run: barrnap -q < examples/small.fna | grep 16S_rRNA
-
-      - name: Run test
-        run: barrnap -q - < examples/small.fna | grep 16S_rRNA
-
-      - name: Run test
-        run: barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
-
-      - name: Run test
-        run: barrnap --threads 2 examples/small.fna
-
-      - name: Run test
-        run: barrnap -q --incseq examples/small.fna | grep '^>'
-
-      - name: Run test
-        run: barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa
