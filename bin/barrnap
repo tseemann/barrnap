@@ -4,11 +4,13 @@ use warnings;
 use List::Util qw(max);
 use FindBin;
 use File::Temp;
+use File::Basename;
+use JSON::PP;
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "0.9";
+my $VERSION = "1.0.0";
 my $EXE = $FindBin::RealScript;
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -37,8 +39,6 @@ msg("This is $EXE $VERSION");
 msg("Written by $AUTHOR");
 msg("Obtained from $URL");
 msg("Detected operating system: $OPSYS");
-msg("Adding $BINDIR to end of PATH");
-$ENV{PATH} .= ":$BINDIR";
 
 msg("Checking for dependencies:");
 require_exe('nhmmer', 'bedtools');
@@ -59,7 +59,7 @@ my $kdom = $KINGDOM{ lc substr($kingdom,0,1) } or
   err("I don't recognise --kingdom '$kingdom'. Try:", values(%KINGDOM) );
 
 my $hmmdb = "$DBDIR/$kdom.hmm";
-err("Can't find database: $hmmdb") unless -r $hmmdb;
+-r $hmmdb or err("Can't find database: $hmmdb");
 msg("Using database: $hmmdb");
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -179,6 +179,30 @@ if ($outseq) {
 msg("Done.");
 
 #----------------------------------------------------------------------
+sub installed_databases {
+  my($dir) = @_;
+  my $db = {};
+  for my $hmm (glob("$dir/*.hmm")) {
+    my $name = basename($hmm, ".hmm");
+    $db->{$name} = $hmm;
+  }
+  return$db;
+}
+
+#----------------------------------------------------------------------
+sub show_databases {
+  my $dbs = installed_databases($DBDIR);
+  msg("Found", scalar(keys %$dbs), "databases in $DBDIR");
+  for my $db (sort keys %$dbs) {
+    my @r = qx"grep '^NAME' $dbs->{$db}";
+    chomp @r;
+    map { s/^\w+\s+//; } @r;
+    print "$db : @r\n";
+  }
+  exit(0);
+}
+
+#----------------------------------------------------------------------
 sub require_exe {
   for my $exe (@_) {
     my($which) = qx(which $exe 2> /dev/null);
@@ -244,6 +268,7 @@ sub setOptions {
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
+    {OPT=>"listdb",VAR=>\&show_databases,     DESC=>"Descube installed database"},
     {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bac', DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
     {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
     {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>1,  DESC=>"Number of threads/cores/CPUs to use"},
@@ -277,9 +302,7 @@ sub usage {
   print "Synopsis:\n  $EXE $VERSION - $DESC\n";
   print "Author:\n  $AUTHOR\n";
   print "Usage:\n";
-  print "  $EXE [options] chr.fa\n";
-  print "  $EXE [options] < chr.fa\n";
-  print "  $EXE [options] - < chr.fa\n";
+  print "  $EXE [options] genome.fasta ...\n";
   foreach (@Options) {
     if (ref) {
       my $def = defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";

@@ -30,6 +30,9 @@ jobs:
       - name: Run test
         run: barrnap --version
         
+      - name: Check DBs
+        run: barrnap --listdb
+        
       - name: Run test
         run: barrnap --help
         
