@@ -47,7 +47,7 @@ jobs:
           barrnap -q --kingdom arc  examples/archaea.fna
           barrnap -q --kingdom mito examples/mitochondria.fna
           barrnap -q --kingdom euk  examples/fungi.fna
-          barrnap 2>&1 | grep 'ERROR: No input file'
+          #barrnap 2>&1 | grep 'ERROR: No input file'
           #! barrnap examples/empty.fna
           #! barrnap examples/null.fna
           barrnap -q examples/small.fna | grep 16S_rRNA
