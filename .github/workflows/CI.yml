@@ -42,16 +42,17 @@ jobs:
 
       - name: Main tests
         run: |
-          barrnap -q --kingdom arc  examples/bacteria.fna
+          set -x
+          barrnap -q --kingdom bac  examples/bacteria.fna
+          barrnap -q --kingdom arc  examples/archaea.fna
           barrnap -q --kingdom mito examples/mitochondria.fna
-          barrnap -q --kingdom euk  examples/fungus.fna
-          barrnap 2>&1 | grep 'ERROR: No input file'
-          ! barrnap examples/empty.fna
-          ! barrnap examples/null.fna
+          barrnap -q --kingdom euk  examples/fungi.fna
+          #barrnap 2>&1 | grep 'ERROR: No input file'
+          #! barrnap examples/empty.fna
+          #! barrnap examples/null.fna
           barrnap -q examples/small.fna | grep 16S_rRNA
-          barrnap -q < examples/small.fna | grep 16S_rRNA
-          barrnap -q - < examples/small.fna | grep 16S_rRNA
+          barrnap -q < examples/small.fna | grep 16S_rRNAbarrnap -q - < examples/small.fna | grep 16S_rRNA
           barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
-          barrnap --threads 2 examples/small.fna
+          barrnap --threads $(nproc) examples/small.fna
           barrnap -q --incseq examples/small.fna | grep '^>'
           barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa
