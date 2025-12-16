@@ -21,6 +21,7 @@ jobs:
           environment-file: environment.yml
           miniforge-version: latest
           channels: conda-forge,bioconda
+          conda-remove-defaults: true
           channel-priority: strict
           auto-update-conda: true
 
