@@ -1,207 +1,262 @@
 #!/usr/bin/env perl
+use 5.18.0;
 use strict;
 use warnings;
-use List::Util qw(max);
+use Cwd qw"fast_abs_path";
+use List::Util qw"min max";
 use FindBin;
-use File::Temp;
+use File::Temp qw"tempdir";
 use File::Basename;
 use JSON::PP;
+use Data::Dumper;
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.0.0";
+my $VERSION = "1.0.0-dev";
 my $EXE = $FindBin::RealScript;
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
-my $DBDIR = "$FindBin::RealBin/../db";
-my $OPSYS = $^O;
-my $BINDIR = "$FindBin::RealBin/../binaries/$OPSYS";
+my $DBDIR = fast_abs_path("$FindBin::RealBin/../db");
 
-my %KINGDOM = (map { substr($_,0,1) => $_ } qw(bac arc euk mito));
-my %LENG = (
-  "5S_rRNA"  =>119, "16S_rRNA"=>1585, "23S_rRNA"=>3232,
-  "5_8S_rRNA"=>156, "18S_rRNA"=>1869, "28S_rRNA"=>2912, "12S_rRNA"=>954,
-);
-my $MAXLEN = int( 1.2 * max(values %LENG) );
+my $dbs = enumerate_dbs($DBDIR);
+
+my %KINGDOM = (map { $_ => 1 } 
+  sort keys %$dbs );
+
+my %TYPE = (map { $_ => 1 } 
+  qw"rRNA tRNA ncRNA" );
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
-my(@Options, $quiet, $kingdom, $threads, $evalue, $lencutoff, $reject, $incseq, $outseq);
+my(@Options, $quiet, $kingdom, $threads, 
+  $types, $listdb, $setupdb, $fast,
+  $evalue, $lencutoff, $reject, $incseq, $outseq);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # check all is well
 
-msg("This is $EXE $VERSION");
-msg("Written by $AUTHOR");
+msg("This is $EXE $VERSION by $AUTHOR");
 msg("Obtained from $URL");
-msg("Detected operating system: $OPSYS");
 
 msg("Checking for dependencies:");
-require_exe('nhmmer', 'bedtools');
+require_exe('cmscan', 'bedtools', 
+            'aragorn', 'any2fasta');
 
 $threads > 0 or err("Invalid --threads $threads");
-msg("Will use $threads threads");
-
 $evalue > 0 or err("Invalid --evalue $evalue");
-msg("Setting evalue cutoff to $evalue");
-
 $lencutoff > 0 or err("Invalid --lencutoff $lencutoff");
-msg("Will tag genes < $lencutoff of expected length.");
-
 $reject > 0 or err("Invalid --reject cutoff $reject");
-msg("Will reject genes < $reject of expected length.");
 
-my $kdom = $KINGDOM{ lc substr($kingdom,0,1) } or
-  err("I don't recognise --kingdom '$kingdom'. Try:", values(%KINGDOM) );
+exists $KINGDOM{$kingdom} or
+  err("Imvalid --kingdom '$kingdom'. Try:", values(%KINGDOM) );
+# FIXME: store with --kingdom database  
+my $code = $kingdom =~ m/^(bac|arc)$/ ? 11 : 1;
 
-my $hmmdb = "$DBDIR/$kdom.hmm";
--r $hmmdb or err("Can't find database: $hmmdb");
-msg("Using database: $hmmdb");
+my @type = split m/\W+/, $types;
+for my $t (@type) {
+  exists $TYPE{$t} or err("Invalid --type $t");
+}
+
+my @infile = map { File::Spec->rel2abs($_) } @ARGV;
+my $tempdir = tempdir(CLEANUP=>1);
+#my $tempdir = ".";
+chdir($tempdir);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-# check if user is piping to STDIN
-# nhmmer needs to fseek() so we make a temp fasta file 
-
-my $fasta = shift @ARGV;
-my $tmpfh;
-if (defined($fasta) && $fasta eq '-'  or  !defined($fasta) && !-t \*STDIN) {
-  $tmpfh = File::Temp->new(UNLINK=>1);
-  msg("Copying STDIN to a temporary file:", $tmpfh->filename);
-  while (<STDIN>) {
-    print $tmpfh $_;
+# LOOP OVER FILES & MODELS
+my @gff;
+for my $infile (@infile) {
+  -r $infile or err("Can't read '$infile'");
+  msg("Using: $infile");
+  my $fasta = basename($infile).".fasta";
+  run_cmd("any2fasta -u '$infile' > '$fasta'");
+  for my $type (@type) {
+    if ($type eq 'tRNA') {
+      my $ara_file = trna_scan($fasta,$code,$type);
+      push @gff, parse_aragorn($ara_file);
+    }
+    else {
+      my $tbl_file = cm_scan($fasta, $kingdom, $type);
+      push @gff,parse_cmscan($tbl_file, $type);
+    }
   }
-  $fasta = $tmpfh->filename;
 }
-$fasta && -r $fasta or err("No input file on command line or stdin");
-
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-# run the external command
-
-msg("Scanning $fasta for $kdom rRNA genes... please wait");
-my $opts = "--cpu $threads -E $evalue --w_length $MAXLEN -o /dev/null --tblout /dev/stdout";
-my $cmd = "nhmmer $opts '$hmmdb' '$fasta'";
-msg("Command: $cmd");
-my @hits = qx($cmd 2>&1);
-
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-# process the output
-
-my %hitname;
-my @feat;
-my @bed;
-HIT: 
-foreach (@hits) {
-  chomp;
-  err("nhmmer failed to run - $_") if m/fail|error|core dump|bus error/i;
-  next if m/^#/;    # comment line
-  next if m/^\s*$/; # empty line
-  my @x = split ' ', $_;
-  err("bad line in nhmmer output - @x") unless defined $x[6] and $x[6] =~ m/^\d+$/;
-
-  # massage to GFF
-  my($begin,$end,$strand) = $x[6] < $x[7] ? ($x[6],$x[7],'+') : ($x[7],$x[6],'-');
-  my($seqid, $gene, $prod) = ($x[0], $x[2], $x[2]);
-  my $score = defined $x[12]  ? $x[12] : '.';
-
-  # record hits for --outseq retrieval later
-  $hitname{"$seqid/$begin:$end($strand)"} = $prod;
-
-  # check if hit makes sense to us
-  exists $LENG{$gene} or err("Detected unknown gene '$gene' in scan, aborting.");
-
-  # assumes NAME field in .HMM file is of form "16s_rRNA" etc
-  $prod =~ s/_r/ ribosomal /; # convert the short ID to an English string
-  $prod =~ s/5_8/5.8/;        # correct naming for 5.8S
-
-  # check for incomplete alignments
-  my $note = '';
-  my $len = $end-$begin+1;
-  
-  if ( $len < int($reject * $LENG{$gene}) ) {
-    msg("Rejecting short $len nt predicted $gene. Adjust via --reject option.");
-    next HIT;
-  }
-  elsif ( $len < int($lencutoff * $LENG{$gene}) ) {
-    $note = sprintf "aligned only %d percent of the $prod", (100*$len/$LENG{$gene});
-    $prod .= " (partial)";
-  }
-
-  # keep track of good hits for retrievel later
-  push @bed, [ $seqid, $begin-1, $end, $gene, 100, $strand ];
-
-  msg("Found:", $gene, $seqid, "L=$len/$LENG{$gene}", "$begin..$end", $strand, $prod);
-  my $tags = "Name=$gene;product=$prod";
-  $tags .= ";note=$note" if $note;
-  push @feat, [
-    $seqid, "$EXE:$VERSION", 'rRNA', $begin, $end, $score, $strand, '.', $tags,
-  ];
-}
-
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-# output a sorted GFF3
-
-sub gff_sort {
-  # sort by seqid, then start pos
-  return ($a->[0] cmp $b->[0]) || ($a->[3] <=> $b->[3]);
-}
-
-msg("Found", scalar(@feat), "ribosomal RNA features.");
-msg("Sorting features and outputting GFF3...");
-print "##gff-version 3\n";
-for my $row (sort { gff_sort } @feat) {
-  print join("\t", @$row),"\n";
-}
-if ($incseq) {
-  print "##FASTA\n";
-  open FASTA, '<', $fasta;
-  print while (<FASTA>);  # `cat $fasta`
-}
-
-if ($outseq) {
-  msg("Writing hit sequences to: $outseq");
-  my $bed = File::Temp->new();
-  for my $b (@bed) {
-    print $bed join("\t", @$b),"\n";
-  }
-  $bed->seek(0, SEEK_END); # rewind
-  my $cmd = "bedtools getfasta -s -name+ -fo '$outseq' -fi '$fasta' -bed '".$bed->filename."'";
-  msg("Running: $cmd");
-  system($cmd);
-}
-
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-# final cleanup
+msg("Found", 0+@gff, "@type features.");
+write_gff(\*STDOUT, \@gff);
 
 msg("Done.");
 
 #----------------------------------------------------------------------
-sub installed_databases {
-  my($dir) = @_;
-  my $db = {};
-  for my $hmm (glob("$dir/*.hmm")) {
-    my $name = basename($hmm, ".hmm");
-    $db->{$name} = $hmm;
+sub gff_sort {
+  # sort by seqid, then start pos
+  return ($a->[0] cmp $b->[0]) || ($a->[3] <=> $b->[3]);
+}
+#----------------------------------------------------------------------
+sub write_gff {
+  my($fh, $feats) = @_;
+  select $fh;
+  print "##gff-version 3\n";
+  for my $row (sort { &gff_sort } @$feats) {
+    print join("\t", @$row),"\n";
   }
-  return$db;
+#  if ($incseq) {
+#    print "##FASTA\n";
+#  }
+# if ($outseq) {
+#   msg("Writing hit sequences to: $outseq");
+#   my $bed = File::Temp->new();
+#   for my $b (@bed) {
+#     print $bed join("\t", @$b),"\n";
+#   }
+#   $bed->seek(0, SEEK_END); # rewind
+#   my $cmd = "bedtools getfasta -s -name+ -fo '$outseq' -fi '$fasta' -bed '".$bed->filename."'";
+#   run_cmd($cmd);
 }
 
 #----------------------------------------------------------------------
-sub show_databases {
-  my $dbs = installed_databases($DBDIR);
-  msg("Found", scalar(keys %$dbs), "databases in $DBDIR");
-  for my $db (sort keys %$dbs) {
-    my @r = qx"grep '^NAME' $dbs->{$db}";
-    chomp @r;
-    map { s/^\w+\s+//; } @r;
-    print "$db : @r\n";
+sub parse_aragorn {
+  my($fname) = @_;
+  my @gff;
+  #>AL123456
+  #54 genes found
+  #1   tRNA-Ile    [10887,10961] 35   (gat)
+  #2   tRNA-Ala    [11112,11185] 34   (tgc)
+  #3   tRNA-Leu    [25644,25728] 34   (cag
+  #4   tRNA-Ser   c[243100,243188] 35 (gga)
+  open my $fh, '<', $fname;
+  my $seqid;
+  while (<$fh>) {
+    chomp;
+    if (m/^>(\S+)/) {
+      $seqid = $1;
+    }
+    elsif (m/found/) {
+      msg("aragorn: $_");
+    }
+    else {
+      my @x = split ' ', $_;
+      $x[2] =~ m/(c?)\[(\d+),(\d+)\]/;
+      my($begin,$end) = ($2,$3);
+      my $strand = $1 ? '-' : '+';
+      my $type = $x[1]; 
+      $type =~ s/-.*$//;
+      push @gff, [
+        $seqid,
+        "$EXE:$VERSION",
+        $type, 
+        $begin, $end, 
+        $x[3], 
+        $strand, 
+        '.',
+        "Name=$x[1];note=$x[4]"
+      ];
+    }
   }
-  exit(0);
+  return @gff;
+}
+#----------------------------------------------------------------------
+sub parse_cmscan {
+  my($fname, $ftype) = @_;
+  my $dpos = -1;
+#  my @bed;
+  my @gff;
+  open my $fh, '<', $fname;
+  while (<$fh>) {
+    chomp;
+    if (m/#target/) {
+      # we are in the header
+      $dpos = index($_, "description");
+      $dpos > 0 or err("Bad header: $_");
+    }
+    next if m/^#/;    # comment line
+    next if m/^\s*$/; # empty line
+    
+    my $prod = substr($_, $dpos);
+    my @x = split ' ', $_;
+    #for my $i (0 .. $#x) {
+    #  print "[$i] $x[$i]\n";
+    #} 
+    $x[10] =~ m/^[+-]$/ or err("Bad hit line: @x");
+    my($begin,$end,$strand) = $x[7] < $x[8] 
+                            ? ($x[7],$x[8],'+') 
+                            : ($x[8],$x[7],'-');
+    my($seqid, $acc, $gene) = ($x[2], $x[1], $x[0]);
+    my $score = defined $x[14]  ? $x[14] : '.';
+    my $len = $end-$begin+1;
+    # record hits for --outseq retrieval later
+    #  $hitname{"$seqid/$begin:$end($strand)"} = $prod;
+
+    # keep track of good hits for retrievel later
+ #   push @bed, [ $seqid, $begin-1, $end, $gene, 100, $strand ];
+
+    msg("Found:", $gene, $seqid, "L=$len", "$begin..$end", $strand, $prod);
+
+    push @gff, [
+      $seqid, 
+      "$EXE:$VERSION", 
+      $ftype,
+      $begin, $end, $score, $strand,'.', 
+        "Name=$gene"
+       .";db_xref=Rfam:$acc"
+       .";product=$prod"
+    ];
+  }
+  return @gff;
 }
 
+#----------------------------------------------------------------------
+sub run_cmd {
+  my($cmd) = @_;
+  msg("Running: $cmd");
+  system($cmd)==0 or err("COuld not run: $cmd");
+}
+#----------------------------------------------------------------------
+sub cm_scan {
+  my($fasta, $king, $feat) = @_;
+  my $outfile = "$fasta.$king.$feat.out";
+  my $speed = $fast ? "--hmmonly" : "--rfam -g";
+  my $cmd = "cmscan $speed";
+  $cmd .= " --cpu $threads -E $evalue";
+  $cmd .= " --noali --acc";
+  $cmd .= " --tblout $outfile";
+  $cmd .= " -o ".File::Spec->devnull;
+  # the 2 positional parametrs
+  $cmd .= " $DBDIR/$king/$king.$feat.cm";
+  $cmd .= " $fasta";
+  run_cmd($cmd);
+  return $outfile;
+}
+#----------------------------------------------------------------------
+sub trna_scan {
+  my($fasta, $code, $type) = @_;
+  my $outfile = "$fasta.$type.out";
+  my $cmd = "aragorn -w -gc$code -o '$outfile' '$fasta'";
+  run_cmd($cmd);
+  return $outfile;
+}
+#----------------------------------------------------------------------
+sub enumerate_dbs {
+  my($dir) = @_;
+  my $db = {};
+  for my $cm (glob("$dir/*/*.cm")) {
+    #msg("* $cm");
+    $cm =~ m=(\w+)\.(\w+)\.cm$= or err("Bad mode; $cm");
+    $db->{$1}{$2} = $cm;
+  }
+  return $db;
+}
+#----------------------------------------------------------------------
+sub list_dbs {
+  my $dbs = enumerate_dbs($DBDIR);
+  #print Dumper($dbs);
+  msg("Database home: $DBDIR");
+  msg("Kingdoms:",sort keys %$dbs);
+  exit(0);
+}
 #----------------------------------------------------------------------
 sub require_exe {
   for my $exe (@_) {
@@ -211,7 +266,6 @@ sub require_exe {
     msg("Found $exe - $which");
   }
 }
-
 #----------------------------------------------------------------------
 sub revcom {
   my($s) = @_;
@@ -219,27 +273,23 @@ sub revcom {
   $s =~ tr/ATCGatcg/TAGCtagc/;
   return $s;
 }
-
 #----------------------------------------------------------------------
 sub msg {
   return if $quiet;
   my $line = "[$EXE] @_\n";
   print STDERR $line;
 }
-
 #----------------------------------------------------------------------
 sub err {
   $quiet=0;
   msg("ERROR:", @_);
   exit(2);
 }
-
 #----------------------------------------------------------------------
 sub version {
-  print STDERR "$EXE $VERSION\n";
+  print "$EXE $VERSION\n";
   exit;
 }
-
 #----------------------------------------------------------------------
 sub show_citation {
   print STDERR << "EOCITE";
@@ -256,7 +306,6 @@ EOCITE
 
   exit;
 }
-
 #----------------------------------------------------------------------
 # Option setting routines
 
@@ -264,17 +313,23 @@ sub setOptions {
   use Getopt::Long;
 
   @Options = (
-    'Options:',
+    'GENERAL',
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
-    {OPT=>"listdb",VAR=>\&show_databases,     DESC=>"Descube installed database"},
-    {OPT=>"kingdom=s", VAR=>\$kingdom,  DEFAULT=>'bac', DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
     {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
+    'DATABASE',
+    {OPT=>"listdb",VAR=>\&list_dbs, DESC=>"Descube installed database"},
+    {OPT=>"setupdb",VAR=>\&setup_dbs, DESC=>"Setup install databases"},
+    {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
+    {OPT=>"types=s", VAR=>\$types,  DEFAULT=>'rRNA', DESC=>"Features: ".join(' ', keys %TYPE) },
+    "SPEED",
     {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>1,  DESC=>"Number of threads/cores/CPUs to use"},
+    {OPT=>"fast!",  VAR=>\$fast, DEFAULT=>undef,  DESC=>"Trade speed for accuracy"},
+    "OUTPUT",
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to label as partial"},
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.25, DESC=>"Proportional length threshold to reject prediction"},
-    {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>1E-6, DESC=>"Similarity e-value cut-off"},
+    {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>"0.001", DESC=>"Similarity e-value cut-off"},
     {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA _input_ sequences in GFF3 output"},
     {OPT=>"outseq=s",  VAR=>\$outseq, DEFAULT=>'', DESC=>"Save rRNA hit seqs to this FASTA file"},
   );
@@ -299,10 +354,12 @@ sub usage {
   $exitcode ||= 0;
   select STDERR if $exitcode; # write to STDERR if exitcode is error
 
-  print "Synopsis:\n  $EXE $VERSION - $DESC\n";
-  print "Author:\n  $AUTHOR\n";
-  print "Usage:\n";
-  print "  $EXE [options] genome.fasta ...\n";
+  print "NAME\n";
+  print "  $EXE $VERSION\n";
+  print "SYNOPSIS\n";
+  print "  $DESC\n";
+  print "USAGE\n";
+  print "  $EXE [opts] genome.fasta ...\n";
   foreach (@Options) {
     if (ref) {
       my $def = defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
@@ -318,7 +375,9 @@ sub usage {
       print "$_\n";
     }      
   }
+  print "HOMEPAGE\n";
+  print "  $URL";
   exit($exitcode);
 }
 
-#----------------------------------------------------------------------
+#---------------------------------------------------------------------
