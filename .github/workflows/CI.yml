@@ -34,7 +34,7 @@ jobs:
           set +x
           bedtools --version
           cmscan -h | grep INFERN
-          any2fasta --version
+          any2fasta -v
 
       - name: Simple tests
         run: |
