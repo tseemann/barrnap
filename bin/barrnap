@@ -79,7 +79,8 @@ for my $infile (@infile) {
   -r $infile or err("Can't read '$infile'");
   msg("Using: $infile");
   my $fasta = basename($infile).".fasta";
-  run_cmd("any2fasta -u '$infile' > '$fasta'");
+  my $a2f_opt = $quiet ? '-q' : '';
+  run_cmd("any2fasta -u $a2f_opt '$infile' > '$fasta'");
   push @fasta, $fasta;
   for my $type (@type) {
     if ($type eq 'tRNA') {
