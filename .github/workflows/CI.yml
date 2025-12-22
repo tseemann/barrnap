@@ -69,7 +69,7 @@ jobs:
           barrnap -q --kingdom arc examples/archaea.fna
           barrnap -q --kingdom fun examples/fungi.fna
           #barrnap 2>&1 | grep 'ERROR: No input file'
-          barrnap -q -t rRNA.tRNA examples/small.fna | grep 16S_rRNA
+          barrnap -q --type rRNA.tRNA examples/small.fna | grep 16S_rRNA
           barrnap --threads $(nproc) examples/small.fna
 
       - name: Other output options
