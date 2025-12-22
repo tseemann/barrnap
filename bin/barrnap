@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Cwd qw"fast_abs_path";
 use List::Util qw"min max";
+use List::MoreUtils qw"uniq";
 use FindBin;
 use File::Temp qw"tempdir";
 use File::Basename;
@@ -39,6 +40,8 @@ setOptions();
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # check all is well
 
+@ARGV or err("No input sequence files provided");
+
 msg("This is $EXE $VERSION by $AUTHOR");
 msg("Obtained from $URL");
 
@@ -61,19 +64,23 @@ for my $t (@type) {
   exists $TYPE{$t} or err("Invalid --type $t");
 }
 
-my @infile = map { File::Spec->rel2abs($_) } @ARGV;
+my @infile = map { File::Spec->rel2abs($_) } uniq @ARGV;
+@infile or err("No input sequence files provided");
+
 my $tempdir = tempdir(CLEANUP=>1);
 #my $tempdir = ".";
 chdir($tempdir);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # LOOP OVER FILES & MODELS
+my @fasta;
 my @gff;
 for my $infile (@infile) {
   -r $infile or err("Can't read '$infile'");
   msg("Using: $infile");
   my $fasta = basename($infile).".fasta";
   run_cmd("any2fasta -u '$infile' > '$fasta'");
+  push @fasta, $fasta;
   for my $type (@type) {
     if ($type eq 'tRNA') {
       my $ara_file = trna_scan($fasta,$code,$type);
@@ -85,8 +92,12 @@ for my $infile (@infile) {
     }
   }
 }
+
+@fasta or err("No valid input files provided");
 msg("Found", 0+@gff, "@type features.");
-write_gff(\*STDOUT, \@gff);
+
+
+write_gff(\*STDOUT, \@fasta, \@gff);
 
 msg("Done.");
 
@@ -97,15 +108,18 @@ sub gff_sort {
 }
 #----------------------------------------------------------------------
 sub write_gff {
-  my($fh, $feats) = @_;
+  my($fh, $fasta, $feats) = @_;
   select $fh;
   print "##gff-version 3\n";
   for my $row (sort { &gff_sort } @$feats) {
-    print join("\t", @$row),"\n";
+     print join("\t", @$row),"\n";
   }
-#  if ($incseq) {
-#    print "##FASTA\n";
-#  }
+  if ($incseq) {
+    print "##FASTA\n";
+    for my $fa (@$fasta) {
+      run_cmd("seqkit seq -w 60 '$fa'");
+    }
+  }
 # if ($outseq) {
 #   msg("Writing hit sequences to: $outseq");
 #   my $bed = File::Temp->new();
@@ -115,8 +129,8 @@ sub write_gff {
 #   $bed->seek(0, SEEK_END); # rewind
 #   my $cmd = "bedtools getfasta -s -name+ -fo '$outseq' -fi '$fasta' -bed '".$bed->filename."'";
 #   run_cmd($cmd);
-}
 
+}
 #----------------------------------------------------------------------
 sub parse_aragorn {
   my($fname) = @_;
@@ -180,7 +194,7 @@ sub parse_cmscan {
     #for my $i (0 .. $#x) {
     #  print "[$i] $x[$i]\n";
     #} 
-    $x[10] =~ m/^[+-]$/ or err("Bad hit line: @x");
+    $x[9] =~ m/^[+-]$/ or err("Bad hit line: @x");
     my($begin,$end,$strand) = $x[7] < $x[8] 
                             ? ($x[7],$x[8],'+') 
                             : ($x[8],$x[7],'-');
@@ -255,6 +269,13 @@ sub list_dbs {
   #print Dumper($dbs);
   msg("Database home: $DBDIR");
   msg("Kingdoms:",sort keys %$dbs);
+  exit(0);
+}
+#----------------------------------------------------------------------
+sub setup_dbs {
+  msg("Make indicesin $DBDIR");
+  run_cmd("find '$DBDIR' -name '*.cm' -exec cmpress -F {} \\;");
+  msg("Indexed databases.");
   exit(0);
 }
 #----------------------------------------------------------------------
@@ -347,7 +368,6 @@ sub setOptions {
 }
 
 #----------------------------------------------------------------------
-
 sub usage {
   my($exitcode) = @_;
   $exitcode = 0 if $exitcode eq 'help'; # what gets passed by getopt func ref

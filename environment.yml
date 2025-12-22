@@ -3,7 +3,9 @@ channels:
   - bioconda
 dependencies:
   - perl >=5.32
-  - bedtools
+  - perl-list-moreutils
   - infernal >=1.1.2
   - aragorn
+  - bedtools
   - any2fasta
+  - seqkit
