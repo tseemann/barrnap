@@ -65,15 +65,15 @@ jobs:
       - name: Main tests
         run: |
           set -x
-          barrnap -q --kingdom bac examples/bacteria.fna
-          barrnap -q --kingdom arc examples/archaea.fna
-          barrnap -q --kingdom fun examples/fungi.fna
-          barrnap -q --fast --type rRNA,tRNA examples/small.fna | grep RF02541
-          barrnap -q --type rRNA examples/mtb.fa.bz2 | grep RF00001
-          barrnap --threads $(nproc) examples/small.fna
+          exe="barrnap --quiet --threads $(nproc)"
+          $exe --kingdom bac examples/bacteria.fna
+          $exe ---kingdom arc examples/archaea.fna
+          $exe --kingdom fun examples/fungi.fna
+          $exe --fast --type rRNA,tRNA examples/small.fna | grep RF02541
+          $exe --type rRNA examples/mtb.fa.bz2 | grep RF00001
 
       - name: Other output options
         run: |
           set -x
           barrnap -q --incseq examples/small.fna | grep '^>'
-          barrnap -q --outseq hits.fa < examples/small.fna && head -n3 hits.fa
+          barrnap -q --outseq hits.fa examples/small.fna && head -n3 hits.fa
