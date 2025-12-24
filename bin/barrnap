@@ -68,8 +68,8 @@ for my $infile (uniq @ARGV) {
   -r $infile or err("Can't read file: $infile");
   push @infile, quotemeta File::Spec->rel2abs($infile);
 }
-@infile or err("No inpit files provided.");
-#print Dumper(\@infile); exit;
+@infile or err("No input files provided.");
+dbg( Dumper(\@infile) );
 
 # Make a temp folder for all intermediate files
 my $tempdir = $debug ? '.' : tempdir(CLEANUP=>1);

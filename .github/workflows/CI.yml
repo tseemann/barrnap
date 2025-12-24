@@ -67,8 +67,8 @@ jobs:
           set -x
           exe="barrnap --quiet --threads $(nproc)"
           $exe --kingdom bac examples/bacteria.fna
-          $exe ---kingdom arc examples/archaea.fna
-          $exe --kingdom fun examples/fungi.fna
+          $exe --king arc examples/archaea.fna
+          $exe --k fun examples/fungi.fna
           $exe --fast --type rRNA,tRNA examples/small.fna | grep RF02541
           $exe --type rRNA examples/mtb.fa.bz2 | grep RF00001
 
