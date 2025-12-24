@@ -247,7 +247,7 @@ sub cm_scan {
   my($fasta, $king, $feat) = @_;
   my $outfile = "$fasta.$king.$feat.out";
   # --cut_ga is recommended for Rfam but --rfam probaly does this?
-  my $speed = $fast ? "--hmmonly" : "--rfam -g --cut_ga";
+  my $speed = $fast ? "--hmmonly" : "--rfam -g";
   my $cmd = "cmscan $speed";
   $cmd .= " --cpu $threads -E $evalue";
   $cmd .= " --noali --acc";
