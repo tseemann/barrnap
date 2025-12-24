@@ -8,13 +8,12 @@ use List::MoreUtils qw"uniq";
 use FindBin;
 use File::Temp qw"tempdir";
 use File::Basename;
-use JSON::PP;
 use Data::Dumper;
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.0.0-dev";
+my $VERSION = "1.0.0";
 my $EXE = $FindBin::RealScript;
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -27,7 +26,7 @@ my %KINGDOM = (map { $_ => 1 }
   sort keys %$dbs );
 
 my %TYPE = (map { $_ => 1 } 
-  qw"rRNA tRNA ncRNA" );
+  qw"rRNA tRNA" ); # ncRNA coming soon
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
@@ -45,9 +44,8 @@ setOptions();
 msg("This is $EXE $VERSION by $AUTHOR");
 msg("Obtained from $URL");
 
-msg("Checking for dependencies:");
-require_exe('cmscan', 'bedtools', 
-            'aragorn', 'any2fasta');
+msg("Checking dependencies:");
+require_exe('cmscan', 'bedtools', 'aragorn', 'any2fasta');
 
 $threads > 0 or err("Invalid --threads $threads");
 $evalue > 0 or err("Invalid --evalue $evalue");
@@ -64,44 +62,68 @@ for my $t (@type) {
   exists $TYPE{$t} or err("Invalid --type $t");
 }
 
-my @infile = map { File::Spec->rel2abs($_) } uniq @ARGV;
-@infile or err("No input sequence files provided");
+# Check all input files and make
+my @infile;
+for my $infile (uniq @ARGV) {
+  -r $infile or err("Can't read file: '$$infile'");
+  push @infile, quotemeta File::Spec->rel2abs($infile);
+}
+@infile or err("No inpit files provided.");
+#print Dumper(\@infile); exit;
 
+# Make a temp folder for all intermediate files
 my $tempdir = tempdir(CLEANUP=>1);
 #my $tempdir = ".";
 chdir($tempdir);
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-# LOOP OVER FILES & MODELS
-my @fasta;
+# Write a single combined FASTA file
+my $FASTA = "$EXE.fasta";
+my($a2f_opt,$sk_opt) = $quiet ? ('-q','--quiet') : ('','');
+run_cmd("any2fasta $a2f_opt @infile > $FASTA.tmp");
+run_cmd("seqkit seq $sk_opt --min-len 1 -u -w 60 $FASTA.tmp > $FASTA");
+run_cmd("seqkit faidx $FASTA"); # bedtools getfasta
+
+# Loop over the RNA types chosen to scan
 my @gff;
-for my $infile (@infile) {
-  -r $infile or err("Can't read '$infile'");
-  msg("Using: $infile");
-  my $fasta = basename($infile).".fasta";
-  my $a2f_opt = $quiet ? '-q' : '';
-  run_cmd("any2fasta -u $a2f_opt '$infile' > '$fasta'");
-  push @fasta, $fasta;
-  for my $type (@type) {
-    if ($type eq 'tRNA') {
-      my $ara_file = trna_scan($fasta,$code,$type);
-      push @gff, parse_aragorn($ara_file);
-    }
-    else {
-      my $tbl_file = cm_scan($fasta, $kingdom, $type);
-      push @gff,parse_cmscan($tbl_file, $type);
-    }
+for my $type (@type) {
+  if ($type eq 'tRNA') {
+    my $ara_file = trna_scan($FASTA,$code,$type);
+    push @gff, parse_aragorn($ara_file);
+  }
+  else {
+    my $tbl_file = cm_scan($FASTA, $kingdom, $type);
+    push @gff,parse_cmscan($tbl_file, $type);
   }
 }
 
-@fasta or err("No valid input files provided");
 msg("Found", 0+@gff, "@type features.");
 
-
-write_gff(\*STDOUT, \@fasta, \@gff);
+write_gff(\*STDOUT, \@gff);
 
 msg("Done.");
 
+#----------------------------------------------------------------------
+sub write_bed {
+  my($fh, $gff) = @_;
+  # $gff =  arrayref of gff arrays
+  foreach (@$gff) {
+  # https://en.wikipedia.org/wiki/General_feature_format#GFF_general_structure
+  # https://en.wikipedia.org/wiki/BED_(file_format)#Format
+    print {$fh} tsv(
+      $_->[0],   # chr
+      $_->[3]-1, # begin 0-based
+      $_->[4],   # end (exclusive)
+      '.'   ,    # name
+      1000,      # socre 1-1000
+      $_->[6],   # strand
+    );
+  }
+}
+
+#----------------------------------------------------------------------
+sub tsv {
+  return join("\t",@_)."\n";
+}
 #----------------------------------------------------------------------
 sub gff_sort {
   # sort by seqid, then start pos
@@ -109,28 +131,25 @@ sub gff_sort {
 }
 #----------------------------------------------------------------------
 sub write_gff {
-  my($fh, $fasta, $feats) = @_;
+  my($fh, $feats) = @_;
   select $fh;
   print "##gff-version 3\n";
   for my $row (sort { &gff_sort } @$feats) {
-     print join("\t", @$row),"\n";
+     print tsv(@$row);
   }
   if ($incseq) {
     print "##FASTA\n";
-    for my $fa (@$fasta) {
-      run_cmd("seqkit seq -w 60 '$fa'");
-    }
+    run_cmd("cat $FASTA");
   }
-# if ($outseq) {
+  if ($outseq) {
 #   msg("Writing hit sequences to: $outseq");
-#   my $bed = File::Temp->new();
-#   for my $b (@bed) {
-#     print $bed join("\t", @$b),"\n";
-#   }
-#   $bed->seek(0, SEEK_END); # rewind
-#   my $cmd = "bedtools getfasta -s -name+ -fo '$outseq' -fi '$fasta' -bed '".$bed->filename."'";
-#   run_cmd($cmd);
-
+    my $BED = "$EXE.bed";
+    open my $bed, '>', $BED;
+    write_bed($bed, \@gff);
+    #$bed->seek(0, SEEK_END); # rewind
+    close $bed;
+    run_cmd("bedtools getfasta -s -fo \Q$outseq\E -fi $FASTA -bed $BED");
+  } 
 }
 #----------------------------------------------------------------------
 sub parse_aragorn {
@@ -177,7 +196,6 @@ sub parse_aragorn {
 sub parse_cmscan {
   my($fname, $ftype) = @_;
   my $dpos = -1;
-#  my @bed;
   my @gff;
   open my $fh, '<', $fname;
   while (<$fh>) {
@@ -202,11 +220,6 @@ sub parse_cmscan {
     my($seqid, $acc, $gene) = ($x[2], $x[1], $x[0]);
     my $score = defined $x[14]  ? $x[14] : '.';
     my $len = $end-$begin+1;
-    # record hits for --outseq retrieval later
-    #  $hitname{"$seqid/$begin:$end($strand)"} = $prod;
-
-    # keep track of good hits for retrievel later
- #   push @bed, [ $seqid, $begin-1, $end, $gene, 100, $strand ];
 
     msg("Found:", $gene, $seqid, "L=$len", "$begin..$end", $strand, $prod);
 
@@ -233,7 +246,8 @@ sub run_cmd {
 sub cm_scan {
   my($fasta, $king, $feat) = @_;
   my $outfile = "$fasta.$king.$feat.out";
-  my $speed = $fast ? "--hmmonly" : "--rfam -g";
+  # --cut_ga is recommended for Rfam but --rfam probaly does this?
+  my $speed = $fast ? "--hmmonly" : "--rfam -g --cut_ga";
   my $cmd = "cmscan $speed";
   $cmd .= " --cpu $threads -E $evalue";
   $cmd .= " --noali --acc";
@@ -287,13 +301,6 @@ sub require_exe {
     chomp $which;
     msg("Found $exe - $which");
   }
-}
-#----------------------------------------------------------------------
-sub revcom {
-  my($s) = @_;
-  $s = reverse($s);
-  $s =~ tr/ATCGatcg/TAGCtagc/;
-  return $s;
 }
 #----------------------------------------------------------------------
 sub msg {
