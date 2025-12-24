@@ -60,7 +60,7 @@ jobs:
         run: |
           set -x
           barrnap -q --type tRNA  examples/lepto.gbk.gz
-          barrnap -q --type tRNA  examples/Mtb.fa.bz2
+          barrnap -q --type tRNA  examples/mtb.fa.bz2
 
       - name: Main tests
         run: |
