@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-use 5.18.0;
+use 5.32.0;
 use strict;
 use warnings;
 use Cwd qw"fast_abs_path";
@@ -79,7 +79,7 @@ chdir($tempdir);
 # Write a single combined FASTA file
 my $FASTA = "$EXE.fasta";
 my($a2f_opt,$sk_opt) = $quiet ? ('-q','--quiet') : ('','');
-run_cmd("any2fasta $a2f_opt @infile > $FASTA.tmp");
+run_cmd("any2fasta -k $a2f_opt @infile > $FASTA.tmp");
 run_cmd("seqkit seq $sk_opt --min-len 1 -u -w 60 $FASTA.tmp > $FASTA");
 run_cmd("seqkit faidx $FASTA"); # bedtools getfasta
 
