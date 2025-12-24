@@ -76,4 +76,9 @@ jobs:
         run: |
           set -x
           barrnap -q --incseq examples/small.fna | grep '^>'
-          barrnap -q --outseq hits.fa examples/small.fna && head -n3 hits.fa
+          out="$PWD/hits.fa"
+          barrnap -q --outseq $out examples/small.fna
+          ls -l
+          echo "TMPDIR=$TMPDIR"
+          head -n 3 $out
+          
