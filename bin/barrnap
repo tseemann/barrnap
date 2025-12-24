@@ -65,6 +65,7 @@ for my $t (@type) {
 # Check all input files and make
 my @infile;
 for my $infile (uniq @ARGV) {
+  $infile = '/dev/stdin' if $infile eq '-';
   -r $infile or err("Can't read file: $infile");
   push @infile, quotemeta File::Spec->rel2abs($infile);
 }
@@ -392,7 +393,7 @@ sub usage {
   print "SYNOPSIS\n";
   print "  $DESC\n";
   print "USAGE\n";
-  print "  $EXE [opts] genome.fasta ...\n";
+  print "  $EXE [opts] seq.{fa,gbk,fq}[.gz] ... \n";
   foreach (@Options) {
     if (ref) {
       my $def = defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
