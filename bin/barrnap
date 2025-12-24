@@ -65,7 +65,7 @@ for my $t (@type) {
 # Check all input files and make
 my @infile;
 for my $infile (uniq @ARGV) {
-  -r $infile or err("Can't read file: '$$infile'");
+  -r $infile or err("Can't read file: $infile");
   push @infile, quotemeta File::Spec->rel2abs($infile);
 }
 @infile or err("No inpit files provided.");
