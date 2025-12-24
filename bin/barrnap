@@ -32,7 +32,7 @@ my %TYPE = (map { $_ => 1 }
 # command line options
 
 my(@Options, $quiet, $kingdom, $threads, 
-  $types, $listdb, $setupdb, $fast,
+  $types, $listdb, $setupdb, $fast, $debug,
   $evalue, $lencutoff, $reject, $incseq, $outseq);
 setOptions();
 
@@ -72,15 +72,15 @@ for my $infile (uniq @ARGV) {
 #print Dumper(\@infile); exit;
 
 # Make a temp folder for all intermediate files
-my $tempdir = tempdir(CLEANUP=>1);
-#my $tempdir = ".";
+my $tempdir = $debug ? '.' : tempdir(CLEANUP=>1);
 chdir($tempdir);
 
 # Write a single combined FASTA file
 my $FASTA = "$EXE.fasta";
 my($a2f_opt,$sk_opt) = $quiet ? ('-q','--quiet') : ('','');
 run_cmd("any2fasta -k $a2f_opt @infile > $FASTA.tmp");
-run_cmd("seqkit seq $sk_opt --min-len 1 -u -w 60 $FASTA.tmp > $FASTA");
+run_cmd("seqkit seq $sk_opt -g --min-len 1 -u -w 60 $FASTA.tmp > $FASTA");
+-s $FASTA or err("No sequences found in input");
 run_cmd("seqkit faidx $FASTA"); # bedtools getfasta
 
 # Loop over the RNA types chosen to scan
@@ -309,6 +309,10 @@ sub msg {
   print STDERR $line;
 }
 #----------------------------------------------------------------------
+sub dbg {
+  print STDERR "[$EXE] DEBUG:\n", @_,"\n" if $debug;
+}
+#----------------------------------------------------------------------
 sub err {
   $quiet=0;
   msg("ERROR:", @_);
@@ -347,6 +351,7 @@ sub setOptions {
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
     {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
+    {OPT=>"debug!",  VAR=>\$debug, DEFAULT=>0, DESC=>"Debug mode"},
     'DATABASE',
     {OPT=>"listdb",VAR=>\&list_dbs, DESC=>"Descube installed database"},
     {OPT=>"setupdb",VAR=>\&setup_dbs, DESC=>"Setup install databases"},
