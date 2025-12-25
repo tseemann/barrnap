@@ -79,8 +79,9 @@ jobs:
           set -x
           exe="barrnap --quiet --threads $(nproc)"
           out="bac.gff"
-          $exe --operon --trna examples/bacteria.fna > $out
+          $exe --operon ---trna --addids examples/bacteria.fna > $out
           grep -w operon $out
+          grep -F 'ID=tRNA-Leu-8' $out
 
       - name: Other output options
         run: |

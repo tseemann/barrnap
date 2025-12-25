@@ -14,7 +14,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.2.2";
+my $VERSION = "1.2.3";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -24,16 +24,14 @@ my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
 
 my $dbs = enumerate_dbs($DBDIR);
-
-my %KINGDOM = (map { $_ => 1 } 
-  sort keys %$dbs );
+my %KINGDOM = (map { $_ => 1 } sort keys %$dbs );
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
 my(@Options, $quiet, $kingdom, $threads, 
   $listdb, $setupdb, $fast, $debug, 
-  $operon, $opdist,
+  $operon, $opdist, $addids,
   $evalue, $lencutoff, $reject, $incseq, 
   $incseqreg, $outseq, $trna, $rrna, $ncrna);
 setOptions();
@@ -105,10 +103,23 @@ if ($ncrna) {
 msg("Found", 0+@gff, "features.");
 
 @gff = sort_gff(\@gff);
+gff_add_ids(\@gff) if $addids;
 print_gff(\*STDOUT, \@gff, $incseq);
 
 msg("Done.");
 
+#----------------------------------------------------------------------
+sub gff_add_ids {
+  my($feats) = @_;
+  my %count;
+  for my $f (@$feats) {
+    my $nv = $f->[-1]; # tagsin last column
+    my $t = $nv =~ m/Name=([^;]+)/ ? $1 : $f->[2];
+    $t =~ s/\s/_/g;
+    $count{$t}++; 
+    $f->[-1] = join ';', "ID=$t-$count{$t}", $nv;
+  }
+}
 #----------------------------------------------------------------------
 sub find_operons {
   my($feats) = @_;
@@ -434,13 +445,15 @@ sub setOptions {
     "SPEED",
     {OPT=>"threads=i", VAR=>\$threads, DEFAULT=>1,  DESC=>"CPU cores to use"},
     {OPT=>"fast!", VAR=>\$fast, DEFAULT=>undef,  DESC=>"Trade speed for accuracy"},
-    "OUTPUT",
+    "FILTERING",
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to label as partial"},
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.25, DESC=>"Proportional length threshold to reject prediction"},
     {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>0.001, DESC=>"Similarity e-value cut-off"},
-    {OPT=>"incseq!",  VAR=>\$incseq,  DESC=>"Include FASTA input in GFF3 output"},
-    {OPT=>"incseqreg!",  VAR=>\$incseqreg,  DESC=>"Include #sequence-region in GFF3 header"},
-    {OPT=>"outseq=s",  VAR=>\$outseq,  DESC=>"Save RNA hits to FASTA file"},
+    "GFF OUTPUT",
+    {OPT=>"addids!",  VAR=>\$addids,  DESC=>"Add unique ID tagsn" },
+    {OPT=>"incseq!",  VAR=>\$incseq,  DESC=>"Include original input sequences"},
+    {OPT=>"incseqreg!",  VAR=>\$incseqreg,  DESC=>"Include #sequence-region headers"},
+    {OPT=>"outseq=s",  VAR=>\$outseq,  DESC=>"Save RNA hits to a FASTA file"},
   );
 
 #  (!@ARGV) && (usage(1));
