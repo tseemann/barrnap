@@ -14,9 +14,9 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.0.3";
+my $VERSION = "1.1.0";
 my $EXE = $FindBin::RealScript;
-my $DESC = "rapid ribosomal RNA prediction";
+my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
 my $DBDIR = fast_abs_path("$FindBin::RealBin/../db");
@@ -27,16 +27,13 @@ my $dbs = enumerate_dbs($DBDIR);
 my %KINGDOM = (map { $_ => 1 } 
   sort keys %$dbs );
 
-my %TYPE = (map { $_ => 1 } 
-  qw"rRNA tRNA" ); # ncRNA coming soon
-
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
 my(@Options, $quiet, $kingdom, $threads, 
-  $types, $listdb, $setupdb, $fast, $debug,
+  $listdb, $setupdb, $fast, $debug,
   $evalue, $lencutoff, $reject, $incseq, 
-  $incseqreg, $outseq);
+  $incseqreg, $outseq, $trna, $rrna, $ncrna);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -50,6 +47,7 @@ msg("Obtained from $URL");
 msg("Checking dependencies:");
 require_exe('cmsearch', 'bedtools', 'aragorn', 'any2fasta');
 
+$trna || $rrna || $ncrna or err("Must choose at least one of --rrna --trna --ncrna");
 $threads > 0 or err("Invalid --threads $threads");
 $evalue > 0 or err("Invalid --evalue $evalue");
 $lencutoff > 0 or err("Invalid --lencutoff $lencutoff");
@@ -59,11 +57,6 @@ exists $KINGDOM{$kingdom} or
   err("Imvalid --kingdom '$kingdom'. Try:", values(%KINGDOM) );
 # FIXME: store with --kingdom database  
 my $code = $kingdom =~ m/^(bac|arc)$/ ? 11 : 1;
-
-my @type = split m/\W+/, $types;
-for my $t (@type) {
-  exists $TYPE{$t} or err("Invalid --type $t");
-}
 
 # Check all input files and make
 my @infile;
@@ -90,18 +83,21 @@ run_cmd("seqkit faidx $sk_opt $FASTA");
 
 # Loop over the RNA types chosen to scan
 my @gff;
-for my $type (@type) {
-  if ($type eq 'tRNA') {
-    my $ara_file = run_aragorn($FASTA,$code,$type);
-    push @gff, parse_aragorn($ara_file);
-  }
-  else {
-    my $tbl_file = run_infernal("cmsearch", $FASTA, $kingdom, $type);
-    push @gff,parse_infernal($tbl_file, $type);
-  }
+if ($trna) {
+  my $ara_file = run_aragorn($FASTA, $code);
+ push @gff, parse_aragorn($ara_file);
+}
+if ($rrna) {
+  my $tbl_file = run_infernal("cmsearch", $FASTA, $kingdom, 'rRNA');
+  push @gff,parse_infernal($tbl_file, 'rRNA');;
+}
+if ($ncrna) {
+  #my $tbl_file = run_infernal("cmscan", $FASTA, $kingdom, 'ncRNA');
+  #push @gff,parse_infernal($tbl_file, $type);
+  msg("WARNING: --ncrna not yet supported");
 }
 
-msg("Found", 0+@gff, "@type features.");
+msg("Found", 0+@gff, "features.");
 
 print_gff(\*STDOUT, \@gff);
 
@@ -165,8 +161,8 @@ sub print_gff {
 }
 #----------------------------------------------------------------------
 sub run_aragorn {
-  my($fasta, $code, $type) = @_;
-  my $outfile = "$fasta.$type.out";
+  my($fasta, $code) = @_;
+  my $outfile = "$fasta.aragorn.out";
   my $cmd = "aragorn -w -gc$code -o '$outfile' '$fasta'";
   run_cmd($cmd);
   return $outfile;
@@ -352,6 +348,7 @@ EOCITE
   exit;
 }
 #----------------------------------------------------------------------
+#----------------------------------------------------------------------
 # Option setting routines
 
 sub setOptions {
@@ -362,23 +359,26 @@ sub setOptions {
     {OPT=>"help",    VAR=>\&usage,             DESC=>"This help"},
     {OPT=>"version", VAR=>\&version,           DESC=>"Print version and exit"},
     {OPT=>"citation",VAR=>\&show_citation,     DESC=>"Print citation for referencing $EXE"},
-    {OPT=>"quiet!",  VAR=>\$quiet, DEFAULT=>0, DESC=>"No screen output"},
-    {OPT=>"debug!",  VAR=>\$debug, DEFAULT=>0, DESC=>"Debug mode"},
+    {OPT=>"quiet!",  VAR=>\$quiet, DESC=>"No screen output"},
+    {OPT=>"debug!",  VAR=>\$debug, DESC=>"Debug mode"},
     'DATABASE',
     {OPT=>"listdb",VAR=>\&list_dbs, DESC=>"Descube installed database"},
     {OPT=>"setupdb",VAR=>\&setup_dbs, DESC=>"Setup install databases"},
-    {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(' ', values %KINGDOM) },
-    {OPT=>"types=s", VAR=>\$types,  DEFAULT=>'rRNA', DESC=>"Features: ".join(' ', keys %TYPE) },
+    {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
+    "MODE",
+    {OPT=>"rrna!",  VAR=>\$rrna,  DEFAULT=>1, DESC=>"Scan for rRNA, disable with -no-rrna" },
+    {OPT=>"trna!",  VAR=>\$trna,  DEFAULT=>0, DESC=>"Scan for tRNA/tmRNA" },
+    {OPT=>"ncrna!", VAR=>\$ncrna, DEFAULT=>0, DESC=>"Scan for ncRNA" },
     "SPEED",
-    {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>1,  DESC=>"Number of threads/cores/CPUs to use"},
+    {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>1,  DESC=>"CPU cores to use"},
     {OPT=>"fast!",  VAR=>\$fast, DEFAULT=>undef,  DESC=>"Trade speed for accuracy"},
     "OUTPUT",
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to label as partial"},
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.25, DESC=>"Proportional length threshold to reject prediction"},
-    {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>"0.001", DESC=>"Similarity e-value cut-off"},
-    {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA _input_ sequences in GFF3 output"},
-    {OPT=>"incseqreg",  VAR=>\$incseqreg, DEFAULT=>0, DESC=>"Include #sequence-region in GFF3 header"},
-    {OPT=>"outseq=s",  VAR=>\$outseq, DEFAULT=>'', DESC=>"Save rRNA hit seqs to this FASTA file"},
+    {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>0.001, DESC=>"Similarity e-value cut-off"},
+    {OPT=>"incseq!",  VAR=>\$incseq,  DESC=>"Include FASTA input in GFF3 output"},
+    {OPT=>"incseqreg!",  VAR=>\$incseqreg,  DESC=>"Include #sequence-region in GFF3 header"},
+    {OPT=>"outseq=s",  VAR=>\$outseq,  DESC=>"Save RNA hits to FASTA file"},
   );
 
 #  (!@ARGV) && (usage(1));
@@ -407,19 +407,20 @@ sub usage {
   print "USAGE\n";
   print "  $EXE [opts] seq.{fa,gbk,fq}[.gz] ... \n";
   foreach (@Options) {
-    if (ref) {
-      my $def = defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
-      $def = ($def ? ' (default OFF)' : '(default ON)') if $_->{OPT} =~ m/!$/;
+    if (ref $_) {
+      my $def = defined $_->{DEFAULT} ? "[$_->{DEFAULT}]" : "";
       my $opt = $_->{OPT};
-      $opt =~ s/!$//; 
-      $opt =~ s/=s$/ [X]/; 
-      $opt =~ s/=i$/ [N]/;
-      $opt =~ s/=f$/ [n.n]/;
-      printf "  --%-15s %s%s\n", $opt, $_->{DESC}, $def;
+      if ($opt =~ s/!$//) {
+        $def = $_->{DEFAULT} ? "[on]" : "";
+      }
+      $opt =~ s/=s$/ STR/;
+      $opt =~ s/=i$/ INT/;
+      $opt =~ s/=f$/ NUM/;
+      printf "  --%-13s %s %s\n", $opt, $_->{DESC}, $def;
     }
     else {
       print "$_\n";
-    }      
+    }
   }
   print "HOMEPAGE\n";
   print "  $URL";

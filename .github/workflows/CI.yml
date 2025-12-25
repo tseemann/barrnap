@@ -54,13 +54,14 @@ jobs:
           set +x
           ! barrnap examples/empty.fna
           ! barrnap examples/null.fna
+          ! barrnap --no-rna examples/small.fna
           barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
 
       - name: File format tests
         run: |
           set -x
-          barrnap -q --type tRNA  examples/lepto.gbk.gz
-          barrnap -q --type tRNA  examples/mtb.fa.bz2
+          barrnap -q --trna  examples/lepto.gbk.gz
+          barrnap -q --no-rrna --trna  examples/mtb.fa.bz2
 
       - name: Main tests
         run: |
@@ -69,8 +70,8 @@ jobs:
           $exe --kingdom bac examples/bacteria.fna
           $exe --king arc examples/archaea.fna
           $exe --k fun examples/fungi.fna
-          $exe --fast --type rRNA,tRNA examples/small.fna | grep RF02541
-          $exe --type rRNA examples/mtb.fa.bz2 | grep RF00001
+          $exe --fast --trna  examples/small.fna | grep RF02541
+          $exe --rrna  examples/mtb.fa.bz2 | grep RF00001
 
       - name: Other output options
         run: |
