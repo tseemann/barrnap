@@ -14,7 +14,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.2.0";
+my $VERSION = "1.2.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -232,10 +232,11 @@ sub parse_aragorn {
   my @gff;
   #>AL123456
   #54 genes found
-  #1   tRNA-Ile    [10887,10961] 35   (gat)
-  #2   tRNA-Ala    [11112,11185] 34   (tgc)
-  #3   tRNA-Leu    [25644,25728] 34   (cag
-  #4   tRNA-Ser   c[243100,243188] 35 (gga)
+  #1   tRNA-Ile    [10887,10961]   35     (gat)
+  #2   tRNA-Ala    [11112,11185]   34     (tgc)
+  #3   tRNA-Leu    [25644,25728]   34     (cag
+  #4   tRNA-Ser   c[243100,243188] 35     (gga)
+  #46  tmRNA       [753615,753977] 90,125 ANDENYALAA**
   open my $fh, '<', $fname;
   my $seqid;
   while (<$fh>) {
@@ -253,12 +254,14 @@ sub parse_aragorn {
       my $strand = $1 ? '-' : '+';
       my $type = $x[1]; 
       $type =~ s/-.*$//;
+      $x[3] =~ m/(^\d+)/;
+      my $score = $1 // $DOT;
       push @gff, [
         $seqid,
         "$EXE:$VERSION",
         $type, 
         $begin, $end, 
-        $x[3], 
+        $score, 
         $strand, 
         $DOT,
         "Name=$x[1];note=$x[4]"
