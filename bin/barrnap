@@ -13,7 +13,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.0.0";
+my $VERSION = "1.0.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -45,7 +45,7 @@ msg("This is $EXE $VERSION by $AUTHOR");
 msg("Obtained from $URL");
 
 msg("Checking dependencies:");
-require_exe('cmscan', 'bedtools', 'aragorn', 'any2fasta');
+require_exe('cmsearch', 'bedtools', 'aragorn', 'any2fasta');
 
 $threads > 0 or err("Invalid --threads $threads");
 $evalue > 0 or err("Invalid --evalue $evalue");
@@ -88,12 +88,12 @@ run_cmd("seqkit faidx $sk_opt $FASTA"); # bedtools getfasta
 my @gff;
 for my $type (@type) {
   if ($type eq 'tRNA') {
-    my $ara_file = trna_scan($FASTA,$code,$type);
+    my $ara_file = run_aragorn($FASTA,$code,$type);
     push @gff, parse_aragorn($ara_file);
   }
   else {
-    my $tbl_file = cm_scan($FASTA, $kingdom, $type);
-    push @gff,parse_cmscan($tbl_file, $type);
+    my $tbl_file = run_infernal("cmsearch", $FASTA, $kingdom, $type);
+    push @gff,parse_infernal($tbl_file, $type);
   }
 }
 
@@ -153,6 +153,14 @@ sub write_gff {
   } 
 }
 #----------------------------------------------------------------------
+sub run_aragorn {
+  my($fasta, $code, $type) = @_;
+  my $outfile = "$fasta.$type.out";
+  my $cmd = "aragorn -w -gc$code -o '$outfile' '$fasta'";
+  run_cmd($cmd);
+  return $outfile;
+}
+#----------------------------------------------------------------------
 sub parse_aragorn {
   my($fname) = @_;
   my @gff;
@@ -194,7 +202,24 @@ sub parse_aragorn {
   return @gff;
 }
 #----------------------------------------------------------------------
-sub parse_cmscan {
+sub run_infernal {
+  my($tool, $fasta, $king, $feat) = @_;
+  my $outfile = "$fasta.$king.$feat.out";
+  # --cut_ga is recommended for Rfam but --rfam probaly does this?
+  my $speed = $fast ? "--hmmonly" : "--rfam -g";
+  my $cmd = "$tool $speed";
+  $cmd .= " --cpu $threads -E $evalue";
+  $cmd .= " --noali --acc";
+  $cmd .= " --tblout $outfile";
+  $cmd .= " -o ".File::Spec->devnull;
+  # the 2 positional parametrs
+  $cmd .= " $DBDIR/$king/$king.$feat.cm";
+  $cmd .= " $fasta";
+  run_cmd($cmd);
+  return $outfile;
+}
+#----------------------------------------------------------------------
+sub parse_infernal {
   my($fname, $ftype) = @_;
   my $dpos = -1;
   my @gff;
@@ -242,31 +267,6 @@ sub run_cmd {
   my($cmd) = @_;
   msg("Running: $cmd");
   system($cmd)==0 or err("COuld not run: $cmd");
-}
-#----------------------------------------------------------------------
-sub cm_scan {
-  my($fasta, $king, $feat) = @_;
-  my $outfile = "$fasta.$king.$feat.out";
-  # --cut_ga is recommended for Rfam but --rfam probaly does this?
-  my $speed = $fast ? "--hmmonly" : "--rfam -g";
-  my $cmd = "cmscan $speed";
-  $cmd .= " --cpu $threads -E $evalue";
-  $cmd .= " --noali --acc";
-  $cmd .= " --tblout $outfile";
-  $cmd .= " -o ".File::Spec->devnull;
-  # the 2 positional parametrs
-  $cmd .= " $DBDIR/$king/$king.$feat.cm";
-  $cmd .= " $fasta";
-  run_cmd($cmd);
-  return $outfile;
-}
-#----------------------------------------------------------------------
-sub trna_scan {
-  my($fasta, $code, $type) = @_;
-  my $outfile = "$fasta.$type.out";
-  my $cmd = "aragorn -w -gc$code -o '$outfile' '$fasta'";
-  run_cmd($cmd);
-  return $outfile;
 }
 #----------------------------------------------------------------------
 sub enumerate_dbs {
