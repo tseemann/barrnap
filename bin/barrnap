@@ -8,17 +8,19 @@ use List::MoreUtils qw"uniq";
 use FindBin;
 use File::Temp qw"tempdir";
 use File::Basename;
+use File::Spec;
 use Data::Dumper;
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.0.1";
+my $VERSION = "1.0.2";
 my $EXE = $FindBin::RealScript;
 my $DESC = "rapid ribosomal RNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
 my $DBDIR = fast_abs_path("$FindBin::RealBin/../db");
+my $DEVNULL = File::Spec->devnull;
 
 my $dbs = enumerate_dbs($DBDIR);
 
@@ -82,7 +84,6 @@ my($a2f_opt,$sk_opt) = $quiet ? ('-q','--quiet') : ('','');
 run_cmd("any2fasta -k $a2f_opt @infile > $FASTA.tmp");
 run_cmd("seqkit seq $sk_opt -g --min-len 1 -u -w 60 $FASTA.tmp > $FASTA");
 -s $FASTA or err("No sequences found in input");
-run_cmd("seqkit faidx $sk_opt $FASTA"); # bedtools getfasta
 
 # Loop over the RNA types chosen to scan
 my @gff;
@@ -147,9 +148,10 @@ sub write_gff {
     my $BED = "$EXE.bed";
     open my $bed, '>', $BED;
     write_bed($bed, \@gff);
-    #$bed->seek(0, SEEK_END); # rewind
     close $bed;
-    run_cmd("bedtools getfasta -s -fo \Q$outseq\E -fi $FASTA -bed $BED");
+    run_cmd("seqkit faidx $sk_opt $FASTA");
+    my $bq = $quiet ? "2>$DEVNULL" : "";
+    run_cmd("bedtools getfasta -s -fo \Q$outseq\E -fi $FASTA -bed $BED $bq");
   } 
 }
 #----------------------------------------------------------------------
@@ -204,14 +206,14 @@ sub parse_aragorn {
 #----------------------------------------------------------------------
 sub run_infernal {
   my($tool, $fasta, $king, $feat) = @_;
-  my $outfile = "$fasta.$king.$feat.out";
+  my $outfile = "$fasta.$king.$feat.tbl";
   # --cut_ga is recommended for Rfam but --rfam probaly does this?
   my $speed = $fast ? "--hmmonly" : "--rfam -g";
   my $cmd = "$tool $speed";
   $cmd .= " --cpu $threads -E $evalue";
   $cmd .= " --noali --acc";
   $cmd .= " --tblout $outfile";
-  $cmd .= " -o ".File::Spec->devnull;
+  $cmd .= " -o $DEVNULL";
   # the 2 positional parametrs
   $cmd .= " $DBDIR/$king/$king.$feat.cm";
   $cmd .= " $fasta";
@@ -228,6 +230,7 @@ sub parse_infernal {
     chomp;
     if (m/#target/) {
       # we are in the header
+      dbg($_);
       $dpos = index($_, "description");
       $dpos > 0 or err("Bad header: $_");
     }
@@ -243,7 +246,7 @@ sub parse_infernal {
     my($begin,$end,$strand) = $x[7] < $x[8] 
                             ? ($x[7],$x[8],'+') 
                             : ($x[8],$x[7],'-');
-    my($seqid, $acc, $gene) = ($x[2], $x[1], $x[0]);
+    my($seqid, $acc, $gene) = ($x[0], $x[1], $x[2]);
     my $score = defined $x[14]  ? $x[14] : '.';
     my $len = $end-$begin+1;
 
@@ -297,7 +300,7 @@ sub setup_dbs {
 #----------------------------------------------------------------------
 sub require_exe {
   for my $exe (@_) {
-    my($which) = qx(which $exe 2> /dev/null);
+    my($which) = qx"which $exe 2>$DEVNULL";
     $which or err("Can not find required '$exe' in PATH");
     chomp $which;
     msg("Found $exe - $which");
