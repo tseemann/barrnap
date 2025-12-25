@@ -73,6 +73,14 @@ jobs:
           $exe --fast --trna  examples/small.fna | grep RF02541
           $exe --rrna  examples/mtb.fa.bz2 | grep RF00001
 
+      - name: Operon tests
+        run: |
+          set -x
+          exe="barrnap --quiet --threads $(nproc)"
+          out="bac.gff"
+          $exe --operon --trna examples/bacteria.fna > $out
+          grep -w operon $out
+
       - name: Other output options
         run: |
           set -x

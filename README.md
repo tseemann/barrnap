@@ -62,9 +62,16 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 
 ### Search
 * `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fub`
-* `--type` is the RNA features to find: `rRNA` `tRNA`
+* `--no-rna` disables rRNA scan
+* `--trna` enables tRNA scan
+* `--ncrna` enables ncRNA scan
+* `operson` enables RNA operon annotation
+
+### Speed
 * `--threads` is how many CPUs to uase
 * `--fast` uses simpler HMMs instead of CMs and it less accurate
+
+### Filtering
 * `--evalue` is the cut-off for hits to keep
 * `--lencutoff` is the proportion of the full length that qualifies as `partial` match
 * `--reject` will not include hits below this proportion of the expected length
@@ -72,6 +79,7 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 ### Output
 * `--quiet` will not print any messages to `stderr`
 * `--incseq` will include the full input sequences in the output GFF
+* `--incseqreg` will include `##sequence-region` headers in the GFF
 * `--outseq` creates a FASTA file with the hit sequences
 * `--debug` will use keep all intermediate files in `.`
 

@@ -14,13 +14,14 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.1.1";
+my $VERSION = "1.2.0";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
 my $DBDIR = fast_abs_path("$FindBin::RealBin/../db");
 my $DEVNULL = File::Spec->devnull;
+my $DOT = '.';
 
 my $dbs = enumerate_dbs($DBDIR);
 
@@ -31,7 +32,8 @@ my %KINGDOM = (map { $_ => 1 }
 # command line options
 
 my(@Options, $quiet, $kingdom, $threads, 
-  $listdb, $setupdb, $fast, $debug,
+  $listdb, $setupdb, $fast, $debug, 
+  $operon, $opdist,
   $evalue, $lencutoff, $reject, $incseq, 
   $incseqreg, $outseq, $trna, $rrna, $ncrna);
 setOptions();
@@ -69,7 +71,7 @@ for my $infile (uniq @ARGV) {
 dbg( Dumper(\@infile) );
 
 # Make a temp folder for all intermediate files
-my $tempdir = $debug ? '.' : tempdir(CLEANUP=>1);
+my $tempdir = $debug ? $DOT : tempdir(CLEANUP=>1);
 chdir($tempdir);
 
 # Write a single combined FASTA file
@@ -85,24 +87,59 @@ run_cmd("seqkit faidx $sk_opt $FASTA");
 my @gff;
 if ($trna) {
   my $ara_file = run_aragorn($FASTA, $code);
- push @gff, parse_aragorn($ara_file);
+  push @gff, parse_aragorn($ara_file);
 }
 if ($rrna) {
   my $tbl_file = run_infernal("cmsearch", $FASTA, $kingdom, 'rRNA');
-  push @gff,parse_infernal($tbl_file, 'rRNA');;
+  push @gff, parse_infernal($tbl_file, 'rRNA');;
+}
+if ($operon) {
+  @gff = sort_gff(\@gff); # for bedtools
+  push @gff, find_operons(\@gff);
 }
 if ($ncrna) {
   #my $tbl_file = run_infernal("cmscan", $FASTA, $kingdom, 'ncRNA');
   #push @gff,parse_infernal($tbl_file, $type);
   msg("WARNING: --ncrna not yet supported");
 }
-
 msg("Found", 0+@gff, "features.");
 
-print_gff(\*STDOUT, \@gff);
+@gff = sort_gff(\@gff);
+print_gff(\*STDOUT, \@gff, $incseq);
 
 msg("Done.");
 
+#----------------------------------------------------------------------
+sub find_operons {
+  my($feats) = @_;
+  my @operons;
+  my $outf = "$EXE.gff";
+  open my $fh, '>', $outf;
+  print_gff($fh, $feats, 0);
+  my $inf = "$EXE.operon.bed";
+  run_cmd("bedtools merge -s -d $opdist -i $outf" 
+         ." -c 3 -o count,collapse -delim '-'"
+         ." > $inf");
+  open my $BED, '<', $inf;
+  while (<$BED>) {
+    chomp;
+    my @bed = split m/\t/;
+    next unless $bed[3] > 1; # not singletons
+    my $name = $bed[4] =~ /rRNA/ ? 'rRNA' : 'tRNA';
+    my($b,$e,$s) = bed2gff_coords($bed[1],$bed[2]);
+    push @operons, [
+      $bed[0],
+      "$EXE:$VERSION",
+      'operon',
+      $b,
+      $e,
+      $DOT,
+      $s,
+      "Name=$name operon;product=$bed[4]"
+    ];
+  }
+  return @operons;
+}
 #----------------------------------------------------------------------
 sub write_bed {
   my($fh, $gff) = @_;
@@ -114,25 +151,46 @@ sub write_bed {
       $_->[0],   # chr
       $_->[3]-1, # begin 0-based
       $_->[4],   # end (exclusive)
-      '.'   ,    # name
+      $DOT,      # name
       1000,      # socre 1-1000
       $_->[6],   # strand
     );
   }
 }
-
+#----------------------------------------------------------------------
+sub bed2gff_coords {
+  my($begin,$end) = @_;
+  return (
+    min($begin,$end) + 1,
+    max($begin,$end),
+    $begin > $end ? '-' : '+',
+  )
+}
+#----------------------------------------------------------------------
+sub gff2bed_coords {
+  my($start,$finish,$strand) = @_;
+  return $strand eq '+' 
+         ? ($start-1,$finish)
+         : ($finish-1,$start);
+}
 #----------------------------------------------------------------------
 sub tsv {
   return join("\t",@_)."\n";
 }
 #----------------------------------------------------------------------
-sub gff_sort {
-  # sort by seqid, then start pos
-  return ($a->[0] cmp $b->[0]) || ($a->[3] <=> $b->[3]);
+sub gff_cmp {
+  return ($a->[0] cmp $b->[0])   # name
+      || ($a->[3] <=> $b->[3])   # start
+      || ($b->[4] <=> $a->[4]) ; # end (rev)
+}
+#----------------------------------------------------------------------
+sub sort_gff {
+  my($gff) = @_;
+  return sort { &gff_cmp } @$gff; 
 }
 #----------------------------------------------------------------------
 sub print_gff {
-  my($fh, $feats) = @_;
+  my($fh, $feats, $add_seq) = @_;
   select $fh;
   print "##gff-version 3\n";
   if ($incseqreg) {
@@ -142,10 +200,11 @@ sub print_gff {
      ." | sed 's/^/##sequence-region /'"
     );
   }
-  for my $row (sort { &gff_sort } @$feats) {
+  # print each feature line (assymeed sorted)
+  for my $row (@$feats) {
      print tsv(@$row);
   }
-  if ($incseq) {
+  if ($add_seq) {
     print "##FASTA\n";
     run_cmd("cat $FASTA");
   }
@@ -201,7 +260,7 @@ sub parse_aragorn {
         $begin, $end, 
         $x[3], 
         $strand, 
-        '.',
+        $DOT,
         "Name=$x[1];note=$x[4]"
       ];
     }
@@ -251,7 +310,7 @@ sub parse_infernal {
                             ? ($x[7],$x[8],'+') 
                             : ($x[8],$x[7],'-');
     my($seqid, $acc, $gene) = ($x[0], $x[3], $x[2]);
-    my $score = defined $x[14]  ? $x[14] : '.';
+    my $score = defined $x[14]  ? $x[14] : $DOT;
     my $len = $end-$begin+1;
 
     msg("Found:", $gene, $seqid, "L=$len", "$begin..$end", $strand, $prod);
@@ -260,7 +319,7 @@ sub parse_infernal {
       $seqid, 
       "$EXE:$VERSION", 
       $ftype,
-      $begin, $end, $score, $strand,'.', 
+      $begin, $end, $score, $strand,$DOT, 
         "Name=$gene"
        .";db_xref=Rfam:$acc"
     ];
@@ -367,9 +426,11 @@ sub setOptions {
     {OPT=>"rrna!",  VAR=>\$rrna,  DEFAULT=>1, DESC=>"Scan for rRNA, disable with -no-rrna" },
     {OPT=>"trna!",  VAR=>\$trna,  DEFAULT=>0, DESC=>"Scan for tRNA/tmRNA" },
     {OPT=>"ncrna!", VAR=>\$ncrna, DEFAULT=>0, DESC=>"Scan for ncRNA" },
+    {OPT=>"operon!", VAR=>\$operon, DEFAULT=>0, DESC=>"Idenitfy RNA opersons" },
+    {OPT=>"opdist=i", VAR=>\$opdist, DEFAULT=>200,  DESC=>"Operon clustering threshold" },
     "SPEED",
-    {OPT=>"threads=i",  VAR=>\$threads, DEFAULT=>1,  DESC=>"CPU cores to use"},
-    {OPT=>"fast!",  VAR=>\$fast, DEFAULT=>undef,  DESC=>"Trade speed for accuracy"},
+    {OPT=>"threads=i", VAR=>\$threads, DEFAULT=>1,  DESC=>"CPU cores to use"},
+    {OPT=>"fast!", VAR=>\$fast, DEFAULT=>undef,  DESC=>"Trade speed for accuracy"},
     "OUTPUT",
     {OPT=>"lencutoff=f",VAR=>\$lencutoff, DEFAULT=>0.8, DESC=>"Proportional length threshold to label as partial"},
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.25, DESC=>"Proportional length threshold to reject prediction"},
