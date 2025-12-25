@@ -14,7 +14,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.1.0";
+my $VERSION = "1.1.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -263,12 +263,10 @@ sub parse_infernal {
       $begin, $end, $score, $strand,'.', 
         "Name=$gene"
        .";db_xref=Rfam:$acc"
-       .";product=$prod"
     ];
   }
   return @gff;
 }
-
 #----------------------------------------------------------------------
 sub run_cmd {
   my($cmd) = @_;
@@ -286,7 +284,7 @@ sub enumerate_dbs {
   }
   return $db;
 }
-#----------------------------------------------------------------------
+
 sub list_dbs {
   my $dbs = enumerate_dbs($DBDIR);
   #print Dumper($dbs);
