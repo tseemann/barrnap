@@ -75,10 +75,10 @@ jobs:
       - name: Other output options
         run: |
           set -x
-          barrnap -q --incseq examples/small.fna | grep '^>'
+          small="examples/small.fna"
+          barrnap -q --incseq $small | grep '^##FASTA'
+          barrnap -q --incseq $small | grep '^>'
+          barrnap -q --incseqreg $small | grep '^##sequence-region'
           out="$PWD/hits.fa"
           barrnap -q --outseq $out examples/small.fna
-          ls -l
-          echo "TMPDIR=$TMPDIR"
-          head -n 3 $out
           

@@ -35,7 +35,8 @@ my %TYPE = (map { $_ => 1 }
 
 my(@Options, $quiet, $kingdom, $threads, 
   $types, $listdb, $setupdb, $fast, $debug,
-  $evalue, $lencutoff, $reject, $incseq, $outseq);
+  $evalue, $lencutoff, $reject, $incseq, 
+  $incseqreg, $outseq);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -84,6 +85,8 @@ my($a2f_opt,$sk_opt) = $quiet ? ('-q','--quiet') : ('','');
 run_cmd("any2fasta -k $a2f_opt @infile > $FASTA.tmp");
 run_cmd("seqkit seq $sk_opt -g --min-len 1 -u -w 60 $FASTA.tmp > $FASTA");
 -s $FASTA or err("No sequences found in input");
+run_cmd("rm -f $FASTA.fai"); # for --debug case of tmp=.
+run_cmd("seqkit faidx $sk_opt $FASTA");
 
 # Loop over the RNA types chosen to scan
 my @gff;
@@ -100,7 +103,7 @@ for my $type (@type) {
 
 msg("Found", 0+@gff, "@type features.");
 
-write_gff(\*STDOUT, \@gff);
+print_gff(\*STDOUT, \@gff);
 
 msg("Done.");
 
@@ -132,10 +135,17 @@ sub gff_sort {
   return ($a->[0] cmp $b->[0]) || ($a->[3] <=> $b->[3]);
 }
 #----------------------------------------------------------------------
-sub write_gff {
+sub print_gff {
   my($fh, $feats) = @_;
   select $fh;
   print "##gff-version 3\n";
+  if ($incseqreg) {
+    run_cmd(
+       "seqkit fx2tab --only-id --name --length $FASTA"
+     ." | sed 's/\\t/ 1 /'"
+     ." | sed 's/^/##sequence-region /'"
+    );
+  }
   for my $row (sort { &gff_sort } @$feats) {
      print tsv(@$row);
   }
@@ -149,7 +159,6 @@ sub write_gff {
     open my $bed, '>', $BED;
     write_bed($bed, \@gff);
     close $bed;
-    run_cmd("seqkit faidx $sk_opt $FASTA");
     my $bq = $quiet ? "2>$DEVNULL" : "";
     run_cmd("bedtools getfasta -s -fo \Q$outseq\E -fi $FASTA -bed $BED $bq");
   } 
@@ -368,6 +377,7 @@ sub setOptions {
     {OPT=>"reject=f",VAR=>\$reject, DEFAULT=>0.25, DESC=>"Proportional length threshold to reject prediction"},
     {OPT=>"evalue=f",VAR=>\$evalue, DEFAULT=>"0.001", DESC=>"Similarity e-value cut-off"},
     {OPT=>"incseq!",  VAR=>\$incseq, DEFAULT=>0, DESC=>"Include FASTA _input_ sequences in GFF3 output"},
+    {OPT=>"incseqreg",  VAR=>\$incseqreg, DEFAULT=>0, DESC=>"Include #sequence-region in GFF3 header"},
     {OPT=>"outseq=s",  VAR=>\$outseq, DEFAULT=>'', DESC=>"Save rRNA hit seqs to this FASTA file"},
   );
 
