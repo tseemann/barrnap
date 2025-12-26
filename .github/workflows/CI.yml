@@ -72,8 +72,8 @@ jobs:
       - name: Main tests
         run: |
           set -x
-          exe="barrnap --quiet --threads $(nproc)"
-          $exe --legacy examples/small.fna | grep LSU
+          exe="barrnap --legacy --quiet --threads $(nproc)"
+          $exe examples/small.fna | grep LSU
           $exe --kingdom bac examples/bacteria.fna
           $exe --king arc examples/archaea.fna
           $exe --k fun examples/fungi.fna
@@ -89,6 +89,9 @@ jobs:
           grep -w operon $out
           grep -F 'ID=tRNA-Leu-8' $out
           grep -F 'Dbxref=Rfam:RF00001' $out
+          for TOOL in infernal aragorn barrnap ; do
+            grep -m 1 -F "$TOOL:" $oui
+          done
           for T in rRNA tRNA tmRNA ncRNA ; do
             echo -n "Found $T "
             cut -f3 $out | grep -w $T | wc -l

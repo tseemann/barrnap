@@ -15,7 +15,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.4.0";
+my $VERSION = "1.4.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -98,8 +98,9 @@ run_cmd("seqkit faidx $sk_opt $FASTA");
 # Loop over the RNA types chosen to scan
 my @gff;
 if ($trna) {
+  my $toolver = aragorn_version();
   my $ara_file = run_aragorn($FASTA, $code);
-  push @gff, parse_aragorn($ara_file);
+  push @gff, parse_aragorn($ara_file, $toolver);
 }
 if ($rrna) {
   my $tool = 'cmsearch';
@@ -111,9 +112,9 @@ if ($operon) {
   push @gff, find_operons(\@gff);
 }
 if ($ncrna) {
-  my $tool = 'cmscan';
-  my $tbl_file = run_infernal($tool, $FASTA, $kingdom, 'ncRNA');
-  push @gff,parse_infernal($tool, $tbl_file, 'ncRNA');
+  my $exe = 'cmscan';
+  my $tbl_file = run_infernal($exe, $FASTA, $kingdom, 'ncRNA');
+  push @gff,parse_infernal($exe, $tbl_file, 'ncRNA');
 }
 msg("Found", 0+@gff, "features.");
 
@@ -254,8 +255,18 @@ sub run_aragorn {
   return $outfile;
 }
 #----------------------------------------------------------------------
+sub aragorn_version {
+  #----------------------------
+  #ARAGORN v1.2.41 Dean Laslett
+  #----------------------------
+  my $help = join '', qx"aragorn -h";
+  $help =~ m/(ARAGORN) v([\d\.]+)/s or err("Can not parse aragorn version");;
+  return lc($1).":$2";
+}
+#----------------------------------------------------------------------
 sub parse_aragorn {
-  my($fname) = @_;
+  my($fname, $toolver) = @_;
+  $toolver ||= "$EXE:$VERSION";
   my @gff;
   #>AL123456
   #54 genes found
@@ -285,13 +296,9 @@ sub parse_aragorn {
       #my $score = $1 // $DOT; 
       my $score = $DOT;
       push @gff, [
-        $seqid,
-        "$EXE:$VERSION",
-        $type, 
-        $begin, $end, 
-        $score, 
-        $strand, 
-        $DOT,
+        $seqid, $toolver,
+        $type, $begin, $end,
+        $score, $strand,  $DOT,
         "Name=$x[1];product=transfer RNA $x[1] $x[4]"
       ];
     }
@@ -300,11 +307,10 @@ sub parse_aragorn {
 }
 #----------------------------------------------------------------------
 sub run_infernal {
-  my($tool, $fasta, $king, $feat) = @_;
+  my($exe, $fasta, $king, $feat) = @_;
   my $outfile = "$fasta.$king.$feat.tbl";
-  # --cut_ga is recommended for Rfam but --rfam probaly does this?
   my $speed = $fast ? "--hmmonly" : "--rfam -g";
-  my $cmd = "$tool $speed";
+  my $cmd = "$exe $speed";
   $cmd .= " --cpu $threads -E $evalue";
   $cmd .= " --tblout $outfile";
   $cmd .= " --noali -o $DEVNULL";
@@ -316,12 +322,16 @@ sub run_infernal {
 }
 #----------------------------------------------------------------------
 sub parse_infernal {
-  my($tool, $fname, $ftype) = @_;
-  my $dpos = -1;
+  my($exe, $fname, $ftype) = @_;
+  my $toolver = "$EXE:$VERSION"; # will overide later
   my @gff;
   open my $fh, '<', $fname;
   while (<$fh>) {
     chomp;
+    # # Version:         1.1.5 (Sep 2023)
+    if (m/Version:\s+([\d\.]+)/) {
+      $toolver = "infernal:$1";
+    }
     next if m/^#/;    # comment line
     next if m/^\s*$/; # empty line
     
@@ -337,11 +347,11 @@ sub parse_infernal {
     # label = $seqid  $seqaccd $model   $mode;_acc
     # rRMA  = E.coli  -        5S_rRNA  RF00001
     # mcRMA = AsrC    RF02746  E.coli   -
-    if ($tool eq 'cmscan') {
+    if ($exe eq 'cmscan') {
       my @pair = splice @x, 2, 2;
       unshift @x, @pair;
     }
-    else {
+    else { # exe eq 'cmsearch'
       $x[2] =~ m/^([^_]+)/;
       $prod = "$1 ribosomal RNA";
     }
@@ -351,7 +361,7 @@ sub parse_infernal {
 
     push @gff, [
       $seq_id, 
-      "$EXE:$VERSION", 
+      $DOT, # will patch in true version at end
       $ftype,
       $begin, $end, $score, $strand,$DOT, 
         "Name=$model_id"
@@ -359,6 +369,8 @@ sub parse_infernal {
        .";product=$prod"
     ];
   }
+  # fill in the tool version (came after featreus)
+  map { $_->[1] = $toolver } @gff;
   return @gff;
 }
 #----------------------------------------------------------------------
@@ -473,9 +485,9 @@ sub setOptions {
     {OPT=>"dbdir=s", VAR=>\$dbdir, DEFAULT=>$DEFAULT_DBDIR, DESC=>"Location of databases"},
     "MODE",
     {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
-    {OPT=>"legacy!", VAR=>\$legacy,  DEFAULT=>1, DESC=>"Simulate barrnap<1.0 - only --rrna)" },
-    {OPT=>"rrna!",  VAR=>\$rrna,  DEFAULT=>1, DESC=>"Find rRNA, disable with --no-rrna" },
-    {OPT=>"trna!",  VAR=>\$trna,  DEFAULT=>1, DESC=>"Find tRNA/tmRNA, disable with --no-trna" },
+    {OPT=>"legacy!", VAR=>\$legacy,  DEFAULT=>0, DESC=>"Simulate barrnap<1.0 - only --rrna)" },
+    {OPT=>"rrna!",  VAR=>\$rrna, DEFAULT=>1, DESC=>"Find rRNA, disable with --no-rrna" },
+    {OPT=>"trna!",  VAR=>\$trna, DEFAULT=>1, DESC=>"Find tRNA/tmRNA, disable with --no-trna" },
     {OPT=>"ncrna!", VAR=>\$ncrna, DEFAULT=>1, DESC=>"Find ncRNA, disable with --no-ncrna" },
     {OPT=>"operon!", VAR=>\$operon, DEFAULT=>1, DESC=>"Idenitfy RNA opersons, disanle wioth --no-operson" },
     {OPT=>"opdist=i", VAR=>\$opdist, DEFAULT=>200,  DESC=>"Operon clustering threshold" },
