@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  EXE: "bin/barrnap --threads 4"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,10 +28,6 @@ jobs:
           channel-priority: strict
           auto-update-conda: true
 
-      - name: Add to PATH
-        run: |
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
-
       - name: Check tools
         run: |
           set +x
@@ -43,36 +42,36 @@ jobs:
       - name: Simple tests
         run: |
           set +x
-          barrnap --version
-          barrnap --help
-          barrnap --citation
+          $EXE --version
+          $EXE --help
+          $EXE --citation
 
       - name: Install databases
         run: |
           set +x
-          ! barrnap --listdb
-          barrnap --updatedb
-          barrnap --listdb
+          ! $EXE --listdb
+          $EXE --updatedb
+          $EXE --listdb
 
       - name: Expected fails
         run: |
           set +x
-          ! barrnap examples/empty.fna
-          ! barrnap examples/null.fna
-          ! barrnap --no-rrna examples/small.fna
-          barrnap examples/polyg.fna
-          barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
+          ! $EXE examples/empty.fna
+          ! $EXE examples/null.fna
+          ! $EXE --no-ncrna --no-trna --no-rrna --no-operon examples/small.fna
+          $EXE examples/polyg.fna
+          $EXE --legacy examples/nohits.fna 2>&1 | grep 'Found 0 '
 
       - name: File format tests
         run: |
           set -x
-          barrnap -q --trna  examples/lepto.gbk.gz
-          barrnap -q --no-rrna --trna  examples/mtb.fa.bz2
+          $EXE -q --legacy examples/lepto.gbk.gz
+          $EXE -q --legacy examples/mtb.fa.bz2
 
       - name: Main tests
         run: |
           set -x
-          exe="barrnap --legacy --quiet --threads $(nproc)"
+          exe="$EXE --legacy --quiet --threads $(nproc)"
           $exe examples/small.fna | grep LSU
           $exe --kingdom bac examples/bacteria.fna
           $exe --king arc examples/archaea.fna
@@ -83,13 +82,13 @@ jobs:
       - name: E.coli mega-test
         run: |
           set -x
-          exe="barrnap --quiet --threads $(nproc)"
+          exe="$EXE --quiet --threads $(nproc)"
           out="bac.gff"
           $exe --operon --ncrna --trna --addids examples/bacteria.fna > $out
           grep -w operon $out
           grep -F 'ID=tRNA-Leu-8' $out
           grep -F 'Dbxref=Rfam:RF00001' $out
-          for TOOL in infernal aragorn barrnap ; do
+          for TOOL in infernal aragorn $EXE ; do
             grep -m 1 -F "$TOOL:" $oui
           done
           for T in rRNA tRNA tmRNA ncRNA ; do
@@ -101,9 +100,9 @@ jobs:
         run: |
           set -x
           small="examples/small.fna"
-          barrnap -q --incseq $small | grep '^##FASTA'
-          barrnap -q --incseq $small | grep '^>'
-          barrnap -q --incseqreg $small | grep '^##sequence-region'
+          $EXE -q --incseq $small | grep '^##FASTA'
+          $EXE -q --incseq $small | grep '^>'
+          $EXE -q --incseqreg $small | grep '^##sequence-region'
           out="$PWD/hits.fa"
-          barrnap -q --outseq $out examples/small.fna
+          $EXE -q --outseq $out examples/small.fna
           
