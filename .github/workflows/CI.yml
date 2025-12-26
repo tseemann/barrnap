@@ -46,7 +46,8 @@ jobs:
       - name: Install databases
         run: |
           set +x
-          barrnap --setupdb
+          ! barrnap --listdb
+          barrnap --updatedb
           barrnap --listdb
 
       - name: Expected fails
