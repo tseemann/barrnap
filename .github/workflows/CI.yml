@@ -64,13 +64,13 @@ jobs:
 
       - name: File format tests
         run: |
-          set -x
+          set -ux
           $EXE -q --legacy examples/lepto.gbk.gz
           $EXE -q --legacy examples/mtb.fa.bz2
 
       - name: Main tests
         run: |
-          set -x
+          set -ux
           exe="$EXE --legacy --quiet --threads $(nproc)"
           $exe examples/small.fna | grep LSU
           $exe --kingdom bac examples/bacteria.fna
@@ -81,7 +81,7 @@ jobs:
 
       - name: E.coli mega-test
         run: |
-          set -x
+          set -ux
           exe="$EXE --quiet --threads $(nproc)"
           out="bac.gff"
           $exe --operon --ncrna --trna --addids examples/bacteria.fna > $out
@@ -89,7 +89,7 @@ jobs:
           grep -F 'ID=tRNA-Leu-8' $out
           grep -F 'Dbxref=Rfam:RF00001' $out
           for TOOL in infernal aragorn $EXE ; do
-            grep -m 1 -F "$TOOL:" $oui
+            grep -m 1 -F "$TOOL:" $out
           done
           for T in rRNA tRNA tmRNA ncRNA ; do
             echo -n "Found $T "
@@ -98,11 +98,10 @@ jobs:
 
       - name: Other output options
         run: |
-          set -x
+          set -ux
           small="examples/small.fna"
           $EXE -q --incseq $small | grep '^##FASTA'
           $EXE -q --incseq $small | grep '^>'
           $EXE -q --incseqreg $small | grep '^##sequence-region'
           out="$PWD/hits.fa"
           $EXE -q --outseq $out examples/small.fna
-          
