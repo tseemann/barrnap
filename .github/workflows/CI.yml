@@ -59,7 +59,7 @@ jobs:
           set +x
           ! barrnap examples/empty.fna
           ! barrnap examples/null.fna
-          ! barrnap --no-rna examples/small.fna
+          ! barrnap --no-rrna examples/small.fna
           barrnap examples/polyg.fna
           barrnap examples/nohits.fna 2>&1 | grep 'Found 0 '
 
