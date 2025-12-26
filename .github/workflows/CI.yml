@@ -88,7 +88,7 @@ jobs:
           grep -w operon $out
           grep -F 'ID=tRNA-Leu-8' $out
           grep -F 'Dbxref=Rfam:RF00001' $out
-          for TOOL in infernal aragorn $EXE ; do
+          for TOOL in infernal aragorn barrnap ; do
             grep -m 1 -F "$TOOL:" $out
           done
           for T in rRNA tRNA tmRNA ncRNA ; do
