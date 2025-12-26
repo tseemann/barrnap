@@ -14,7 +14,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.2.3";
+my $VERSION = "1.2.4";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -275,7 +275,7 @@ sub parse_aragorn {
         $score, 
         $strand, 
         $DOT,
-        "Name=$x[1];note=$x[4]"
+        "Name=$x[1];product=$x[1] $x[4]"
       ];
     }
   }
@@ -335,7 +335,8 @@ sub parse_infernal {
       $ftype,
       $begin, $end, $score, $strand,$DOT, 
         "Name=$gene"
-       .";db_xref=Rfam:$acc"
+       .";Dbxref=Rfam:$acc"
+       .";length=$len"
     ];
   }
   return @gff;
