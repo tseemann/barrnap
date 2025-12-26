@@ -28,12 +28,14 @@ my %KINGDOM = (map { $_ => 1 } @KINGDOM);
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
-my(@Options, $quiet, $kingdom, $threads, 
-  $listdb, $updatedb, $fast, $debug, 
-  $operon, $opdist, $addids, 
-  $listdb, $updatedb, $dbdir,
-  $evalue, $lencutoff, $reject, $incseq, 
-  $incseqreg, $outseq, $trna, $rrna, $ncrna);
+my(@Options, 
+   $quiet, $kingdom, $threads, 
+   $fast, $debug, $trna, $rrna, $ncrna,
+   $operon, $opdist, $addids, 
+   $listdb, $updatedb, $dbdir,
+   $evalue, $lencutoff, $reject,
+   $incseq, $incseqreg, $outseq, 
+);
 setOptions();
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
