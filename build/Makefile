@@ -31,7 +31,7 @@ all: $(CMS)
 install : $(CMS)
 	for K in $(KINGS); do \
 	  dir="$(DBDIR)/$$K" ; \
-	  mkdir -p "$dir"
+	  mkdir -p "$$dir" ;
 	  $(RM) "$$dir"/* ; \
 	  $(CP) $$K.*.cm "$$dir/" ; \
 	  for C in "$$dir"/*.cm ; do \

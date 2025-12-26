@@ -14,7 +14,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.3.0";
+my $VERSION = "1.3.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -45,7 +45,7 @@ msg("This is $EXE $VERSION by $AUTHOR");
 msg("Obtained from $URL");
 
 msg("Checking dependencies:");
-require_exe('cmsearch', 'bedtools', 'aragorn', 'any2fasta');
+require_exe('cmsearch', 'bedtools', 'aragorn', 'any2fasta', 'make');
 
 $trna || $rrna || $ncrna or err("Must choose at least one of --rrna --trna --ncrna");
 $threads > 0 or err("Invalid --threads $threads");
@@ -369,17 +369,23 @@ sub list_dbs {
   my $dbs = enumerate_dbs($DBDIR);
   #print Dumper($dbs);
   msg("Database home: $DBDIR");
+  my $count=0;
   for my $k (sort keys %$dbs) {
     msg("--kingdom '$k' has: tRNA",sort keys %{$dbs->{$k}});;
+    $count++;
   }
-  msg("Run '$EXE --updatedb' to update/repair these");
+  $count or err("You have no databases installed!"
+   ."\nRun '$EXE --updatedb' to update/repair thos");
   exit(0);
 }
 #----------------------------------------------------------------------
 sub update_dbs {
+  -d $DBDIR or err("Database folder $DBDIR does not exist");
+  -w $DNDOR or err("You don't have permissions to modify the database folder $DBDIRDatabase folder $DBDIR");
   my $make = "make -C \Q$DBDIR/../build\E";
   run_cmd("$make bigclean");
   run_cmd("$make install");  
+  list_dbs();
   exit(0);
 }
 #----------------------------------------------------------------------

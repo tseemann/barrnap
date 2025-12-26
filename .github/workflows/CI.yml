@@ -43,11 +43,11 @@ jobs:
           barrnap --help
           barrnap --citation
 
-      - name: Database tests
+      - name: Install databases
         run: |
           set +x
-          barrnap --listdb
           barrnap --setupdb
+          barrnap --listdb
 
       - name: Expected fails
         run: |
