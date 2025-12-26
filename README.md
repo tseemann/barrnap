@@ -22,7 +22,7 @@ Multithreading is supported and one can expect roughly linear speed-ups with mor
 
 ### Requirements
 * [Perl >= 5.18](https://dev.perl.org/perl5/) (core modules only)
-* [inderfnal >= 1.1](http://eddylab.org/infernal/) 
+* [infernal >= 1.1](http://eddylab.org/infernal/) 
 * [bedtools >= 2.27.0](http://bedtools.readthedocs.io/en/latest/)
 * [any2fasta >= 0.6.0](https://github.com/tseemann/any2fasta)
 
@@ -60,12 +60,16 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 * `--version` print version in form `barrnap X.Y` and exit 
 * `--citation` print a citation and exit
 
+### Database management
+* `--listdb` to see what DBs are installed
+* `--updatedb` to update DBs from internet
+
 ### Search
 * `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fub`
 * `--no-rna` disables rRNA scan
 * `--trna` enables tRNA scan
 * `--ncrna` enables ncRNA scan
-* `operson` enables RNA operon annotation
+* `--operon` enables RNA operon annotation
 
 ### Speed
 * `--threads` is how many CPUs to uase

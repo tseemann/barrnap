@@ -74,15 +74,19 @@ jobs:
           $exe --fast --trna  examples/small.fna | grep RF02541
           $exe --rrna  examples/mtb.fa.bz2 | grep RF00001
 
-      - name: Operon tests
+      - name: E.coli mega-test
         run: |
           set -x
           exe="barrnap --quiet --threads $(nproc)"
           out="bac.gff"
-          $exe --operon --trna --addids examples/bacteria.fna > $out
+          $exe --operon --ncrma --trna --addids examples/bacteria.fna > $out
           grep -w operon $out
           grep -F 'ID=tRNA-Leu-8' $out
           grep -F 'Dbxref=Rfam:RF00001' $out
+          for T in rRNA tRNA tmRNA ncRNA ; do
+            echo -n "Found $T "
+            cut -f3 $out | grep -w $T | wc -l
+          done
 
       - name: Other output options
         run: |

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Cwd qw"fast_abs_path";
 use List::Util qw"min max";
-use List::MoreUtils qw"uniq";
+use List::MoreUtils qw"uniq minmax";
 use FindBin;
 use File::Temp qw"tempdir";
 use File::Basename;
@@ -14,7 +14,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.2.4";
+my $VERSION = "1.3.0";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -88,17 +88,18 @@ if ($trna) {
   push @gff, parse_aragorn($ara_file);
 }
 if ($rrna) {
-  my $tbl_file = run_infernal("cmsearch", $FASTA, $kingdom, 'rRNA');
-  push @gff, parse_infernal($tbl_file, 'rRNA');;
+  my $tool = 'cmsearch';
+  my $tbl_file = run_infernal($tool, $FASTA, $kingdom, 'rRNA');
+  push @gff, parse_infernal($tool, $tbl_file, 'rRNA');;
 }
 if ($operon) {
   @gff = sort_gff(\@gff); # for bedtools
   push @gff, find_operons(\@gff);
 }
 if ($ncrna) {
-  #my $tbl_file = run_infernal("cmscan", $FASTA, $kingdom, 'ncRNA');
-  #push @gff,parse_infernal($tbl_file, $type);
-  msg("WARNING: --ncrna not yet supported");
+  my $tool = 'cmscan';
+  my $tbl_file = run_infernal($tool, $FASTA, $kingdom, 'ncRNA');
+  push @gff,parse_infernal($tool, $tbl_file, 'ncRNA');
 }
 msg("Found", 0+@gff, "features.");
 
@@ -146,7 +147,8 @@ sub find_operons {
       $e,
       $DOT,
       $s,
-      "Name=$name operon;product=$bed[4]"
+      $DOT,
+      "Name=$name operon;product=$name operon: $bed[4]"
     ];
   }
   return @operons;
@@ -265,8 +267,9 @@ sub parse_aragorn {
       my $strand = $1 ? '-' : '+';
       my $type = $x[1]; 
       $type =~ s/-.*$//;
-      $x[3] =~ m/(^\d+)/;
-      my $score = $1 // $DOT;
+      #$x[3] =~ m/(^\d+)/;
+      #my $score = $1 // $DOT; 
+      my $score = $DOT;
       push @gff, [
         $seqid,
         "$EXE:$VERSION",
@@ -275,7 +278,7 @@ sub parse_aragorn {
         $score, 
         $strand, 
         $DOT,
-        "Name=$x[1];product=$x[1] $x[4]"
+        "Name=$x[1];product=transfer RNA $x[1] $x[4]"
       ];
     }
   }
@@ -289,9 +292,8 @@ sub run_infernal {
   my $speed = $fast ? "--hmmonly" : "--rfam -g";
   my $cmd = "$tool $speed";
   $cmd .= " --cpu $threads -E $evalue";
-  $cmd .= " --noali --acc";
   $cmd .= " --tblout $outfile";
-  $cmd .= " -o $DEVNULL";
+  $cmd .= " --noali -o $DEVNULL";
   # the 2 positional parametrs
   $cmd .= " $DBDIR/$king/$king.$feat.cm";
   $cmd .= " $fasta";
@@ -300,43 +302,47 @@ sub run_infernal {
 }
 #----------------------------------------------------------------------
 sub parse_infernal {
-  my($fname, $ftype) = @_;
+  my($tool, $fname, $ftype) = @_;
   my $dpos = -1;
   my @gff;
   open my $fh, '<', $fname;
   while (<$fh>) {
     chomp;
-    if (m/#target/) {
-      # we are in the header
-      dbg($_);
-      $dpos = index($_, "description");
-      $dpos > 0 or err("Bad header: $_");
-    }
     next if m/^#/;    # comment line
     next if m/^\s*$/; # empty line
     
-    my $prod = substr($_, $dpos);
     my @x = split ' ', $_;
-    dbg(Dumper(\@x));
+    dbg( map { "[$_]='$x[$_]' " } 0 .. $#x );
 
-    $x[9] =~ m/^[+-]$/ or err("Bad hit line: @x");
-    my($begin,$end,$strand) = $x[7] < $x[8] 
-                            ? ($x[7],$x[8],'+') 
-                            : ($x[8],$x[7],'-');
-    my($seqid, $acc, $gene) = ($x[0], $x[3], $x[2]);
-    my $score = defined $x[14]  ? $x[14] : $DOT;
-    my $len = $end-$begin+1;
+    my $strand = $x[9];
+    $strand =~ m/^[+-]$/ or err("Bad hit line: @x");
+    my($begin,$end) = minmax($x[7], $x[8]);
+    my $prod = join( ' ', @x[17..$#x] );
+    my $score = $x[15] // $DOT;
 
-    msg("Found:", $gene, $seqid, "L=$len", "$begin..$end", $strand, $prod);
+    # label = $seqid  $seqaccd $model   $mode;_acc
+    # rRMA  = E.coli  -        5S_rRNA  RF00001
+    # mcRMA = AsrC    RF02746  E.coli   -
+    if ($tool eq 'cmscan') {
+      my @pair = splice @x, 2, 2;
+      unshift @x, @pair;
+    }
+    else {
+      $x[2] =~ m/^([^_]+)/;
+      $prod = "$1 ribosomal RNA";
+    }
+    my($seq_id, $model_id, $model_acc) = ($x[0], $x[2], $x[3]);
+
+    msg("Found $ftype $model_id($model_acc) @ $seq_id:$begin-$end($strand)"); 
 
     push @gff, [
-      $seqid, 
+      $seq_id, 
       "$EXE:$VERSION", 
       $ftype,
       $begin, $end, $score, $strand,$DOT, 
-        "Name=$gene"
-       .";Dbxref=Rfam:$acc"
-       .";length=$len"
+        "Name=$model_id"
+       .";Dbxref=Rfam:$model_acc"
+       .";product=$prod"
     ];
   }
   return @gff;
