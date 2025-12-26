@@ -20,6 +20,7 @@ my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
 my $DEFAULT_DBDIR = fast_abs_path("$FindBin::RealBin/../db");
+my $dbdir = $DEFAULT_DBDIR;
 my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
 my @KINGDOM = qw"bac arc fun";
@@ -30,7 +31,7 @@ my %KINGDOM = (map { $_ => 1 } @KINGDOM);
 
 my(@Options, $quiet, $kingdom, $threads, 
   $listdb, $updatedb, $fast, $debug, 
-  $operon, $opdist, $addids, $dbdir,
+  $operon, $opdist, $addids,
   $evalue, $lencutoff, $reject, $incseq, 
   $incseqreg, $outseq, $trna, $rrna, $ncrna);
 setOptions();
@@ -39,12 +40,8 @@ setOptions();
 # check all is well
 
 @ARGV or err("No input sequence files provided");
+-d $dbdir or err("--dbdir '$dbdir' does not exist");
 
-msg("This is $EXE $VERSION by $AUTHOR");
-msg("Obtained from $URL");
-
-msg("Checking dependencies:");
-require_exe('cmsearch', 'bedtools', 'aragorn', 'any2fasta', 'make');
 
 $trna || $rrna || $ncrna or err("Must choose at least one of --rrna --trna --ncrna");
 $threads > 0 or err("Invalid --threads $threads");
@@ -56,6 +53,11 @@ exists $KINGDOM{$kingdom} or
   err("Imvalid --kingdom '$kingdom'. Try:", values(%KINGDOM) );
 # FIXME: store with --kingdom database  
 my $code = $kingdom =~ m/^(bac|arc)$/ ? 11 : 1;
+
+msg("This is $EXE $VERSION by $AUTHOR");
+msg("Obtained from $URL");
+msg("Checking dependencies:");
+require_exe('cmsearch', 'bedtools', 'aragorn', 'any2fasta', 'make');
 
 # Check all input files and make
 my @infile;
@@ -355,10 +357,9 @@ sub run_cmd {
 #----------------------------------------------------------------------
 sub enumerate_dbs {
   my($dir) = @_;
+  $dir // err("Can't enumerate undefined folder");
   my $db = {};
-  return unless -d $dir;
   for my $cm (glob("$dir/*/*.cm")) {
-    #msg("* $cm");
     $cm =~ m=(\w+)\.(\w+)\.cm$= or err("Bad mode; $cm");
     $db->{$1}{$2} = $cm;
   }
@@ -366,12 +367,12 @@ sub enumerate_dbs {
 }
 #----------------------------------------------------------------------
 sub list_dbs {
+  #print Dumper($dbdir);
   my $dbs = enumerate_dbs($dbdir);
-  #print Dumper($dbs);
   msg("Database home: $dbdir");
   my $count=0;
   for my $k (sort keys %$dbs) {
-    msg("--kingdom '$k' has: tRNA",sort keys %{$dbs->{$k}});;
+    msg("--kingdom '$k' has: tRNA tmRNA",sort keys %{$dbs->{$k}});;
     $count++;
   }
   $count or err("You have no databases installed!"
