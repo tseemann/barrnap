@@ -381,7 +381,7 @@ sub list_dbs {
 #----------------------------------------------------------------------
 sub update_dbs {
   -d $DBDIR or err("Database folder $DBDIR does not exist");
-  -w $DNDOR or err("You don't have permissions to modify the database folder $DBDIRDatabase folder $DBDIR");
+  -w $DBDIR or err("You don't have permissions to modify the database folder $DBDIRDatabase folder $DBDIR");
   my $make = "make -C \Q$DBDIR/../build\E";
   run_cmd("$make bigclean");
   run_cmd("$make install");  
