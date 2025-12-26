@@ -30,11 +30,12 @@ all: $(CMS)
 
 install : $(CMS)
 	for K in $(KINGS); do \
-	  dir=$(DBDIR)/$$K/ ; \
-	  $(RM) $$dir/* ; \
-	  $(CP) $$K.*.cm $$dir/ ; \
-	  for C in $$dir/*cm ; do \
-	    cmpress $$C ; \
+	  dir="$(DBDIR)/$$K" ; \
+	  mkdir -p "$dir"
+	  $(RM) "$$dir"/* ; \
+	  $(CP) $$K.*.cm "$$dir/" ; \
+	  for C in "$$dir"/*.cm ; do \
+	    cmpress "$$C" ; \
 	  done ; \
 	done
 

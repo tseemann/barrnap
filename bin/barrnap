@@ -30,7 +30,7 @@ my %KINGDOM = (map { $_ => 1 } sort keys %$dbs );
 # command line options
 
 my(@Options, $quiet, $kingdom, $threads, 
-  $listdb, $setupdb, $fast, $debug, 
+  $listdb, $updatedb, $fast, $debug, 
   $operon, $opdist, $addids,
   $evalue, $lencutoff, $reject, $incseq, 
   $incseqreg, $outseq, $trna, $rrna, $ncrna);
@@ -364,19 +364,22 @@ sub enumerate_dbs {
   }
   return $db;
 }
-
+#----------------------------------------------------------------------
 sub list_dbs {
   my $dbs = enumerate_dbs($DBDIR);
   #print Dumper($dbs);
   msg("Database home: $DBDIR");
-  msg("Kingdoms:",sort keys %$dbs);
+  for my $k (sort keys %$dbs) {
+    msg("--kingdom '$k' has: tRNA",sort keys %{$dbs->{$k}});;
+  }
+  msg("Run '$EXE --updatedb' to update/repair these");
   exit(0);
 }
 #----------------------------------------------------------------------
-sub setup_dbs {
-  msg("Make indicesin $DBDIR");
-  run_cmd("find '$DBDIR' -name '*.cm' -exec cmpress -F {} \\;");
-  msg("Indexed databases.");
+sub update_dbs {
+  my $make = "make -C \Q$DBDIR/../build\E";
+  run_cmd("$make bigclean");
+  run_cmd("$make install");  
   exit(0);
 }
 #----------------------------------------------------------------------
@@ -426,7 +429,6 @@ EOCITE
   exit;
 }
 #----------------------------------------------------------------------
-#----------------------------------------------------------------------
 # Option setting routines
 
 sub setOptions {
@@ -440,10 +442,10 @@ sub setOptions {
     {OPT=>"quiet!",  VAR=>\$quiet, DESC=>"No screen output"},
     {OPT=>"debug!",  VAR=>\$debug, DESC=>"Debug mode"},
     'DATABASE',
-    {OPT=>"listdb",VAR=>\&list_dbs, DESC=>"Descube installed database"},
-    {OPT=>"setupdb",VAR=>\&setup_dbs, DESC=>"Setup install databases"},
-    {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
+    {OPT=>"listdb!",VAR=>\&list_dbs, DESC=>"Show installed database"},
+    {OPT=>"updatedb!",VAR=>\&update_dbs, DESC=>"Update databases from internet"},
     "MODE",
+    {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
     {OPT=>"rrna!",  VAR=>\$rrna,  DEFAULT=>1, DESC=>"Scan for rRNA, disable with -no-rrna" },
     {OPT=>"trna!",  VAR=>\$trna,  DEFAULT=>0, DESC=>"Scan for tRNA/tmRNA" },
     {OPT=>"ncrna!", VAR=>\$ncrna, DEFAULT=>0, DESC=>"Scan for ncRNA" },
