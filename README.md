@@ -59,10 +59,12 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 * `--help` show help and exit
 * `--version` print version in form `barrnap X.Y` and exit 
 * `--citation` print a citation and exit
+* `--debug` will write all tempfiles to '.' and print gumpf
 
 ### Database management
 * `--listdb` to see what DBs are installed
 * `--updatedb` to update DBs from internet
+* `--dbdir` to use a different DB folder
 
 ### Search
 * `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fub`

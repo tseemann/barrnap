@@ -14,24 +14,23 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.3.1";
+my $VERSION = "1.3.2";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
-my $DBDIR = fast_abs_path("$FindBin::RealBin/../db");
+my $DEFAULT_DBDIR = fast_abs_path("$FindBin::RealBin/../db");
 my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
-
-my $dbs = enumerate_dbs($DBDIR);
-my %KINGDOM = (map { $_ => 1 } sort keys %$dbs );
+my @KINGDOM = qw"bac arc fun";
+my %KINGDOM = (map { $_ => 1 } @KINGDOM);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
 my(@Options, $quiet, $kingdom, $threads, 
   $listdb, $updatedb, $fast, $debug, 
-  $operon, $opdist, $addids,
+  $operon, $opdist, $addids, $dbdir,
   $evalue, $lencutoff, $reject, $incseq, 
   $incseqreg, $outseq, $trna, $rrna, $ncrna);
 setOptions();
@@ -295,7 +294,7 @@ sub run_infernal {
   $cmd .= " --tblout $outfile";
   $cmd .= " --noali -o $DEVNULL";
   # the 2 positional parametrs
-  $cmd .= " $DBDIR/$king/$king.$feat.cm";
+  $cmd .= " $dbdir/$king/$king.$feat.cm";
   $cmd .= " $fasta";
   run_cmd($cmd);
   return $outfile;
@@ -357,6 +356,7 @@ sub run_cmd {
 sub enumerate_dbs {
   my($dir) = @_;
   my $db = {};
+  return unless -d $dir;
   for my $cm (glob("$dir/*/*.cm")) {
     #msg("* $cm");
     $cm =~ m=(\w+)\.(\w+)\.cm$= or err("Bad mode; $cm");
@@ -366,9 +366,9 @@ sub enumerate_dbs {
 }
 #----------------------------------------------------------------------
 sub list_dbs {
-  my $dbs = enumerate_dbs($DBDIR);
+  my $dbs = enumerate_dbs($dbdir);
   #print Dumper($dbs);
-  msg("Database home: $DBDIR");
+  msg("Database home: $dbdir");
   my $count=0;
   for my $k (sort keys %$dbs) {
     msg("--kingdom '$k' has: tRNA",sort keys %{$dbs->{$k}});;
@@ -380,8 +380,8 @@ sub list_dbs {
 }
 #----------------------------------------------------------------------
 sub update_dbs {
-  -d $DBDIR or err("Database folder: $DBDIR does not exist");
-  -w $DBDIR or err("You don't have permissions to modify the database folder: $DBDIR");my $make = "make -C \Q$DBDIR/../build\E";
+  -d $dbdir or err("Database folder: $dbdir does not exist");
+  -w $dbdir or err("You don't have permissions to modify the database folder: $dbdir");my $make = "make -C \Q$dbdir/../build\E";
   run_cmd("$make bigclean");
   run_cmd("$make install");  
   list_dbs();
@@ -449,6 +449,7 @@ sub setOptions {
     'DATABASE',
     {OPT=>"listdb!",VAR=>\&list_dbs, DESC=>"Show installed database"},
     {OPT=>"updatedb!",VAR=>\&update_dbs, DESC=>"Update databases from internet"},
+    {OPT=>"dbdir=s",VAR=>\$dbdir, DEFAULT=>$ENV{'BARRNAP_DBDIR'} || $DEFAULT_DBDIR, DESC=>"LOcation of databases"},
     "MODE",
     {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
     {OPT=>"rrna!",  VAR=>\$rrna,  DEFAULT=>1, DESC=>"Scan for rRNA, disable with -no-rrna" },
