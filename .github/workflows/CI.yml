@@ -73,6 +73,7 @@ jobs:
         run: |
           set -x
           exe="barrnap --quiet --threads $(nproc)"
+          $exe --legacy examples/small.fna | grep LSU
           $exe --kingdom bac examples/bacteria.fna
           $exe --king arc examples/archaea.fna
           $exe --k fun examples/fungi.fna
