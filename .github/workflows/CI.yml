@@ -36,7 +36,7 @@ jobs:
           aragorn -h | grep '^ARAGORN v'
           cmscan -h | grep INFERN
           make --version | head -n 1
-          cmssearch -h | grep INFERN
+          cmsearch -h | grep INFERN
           any2fasta -v
           seqkit version
 
