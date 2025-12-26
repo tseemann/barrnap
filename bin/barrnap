@@ -20,7 +20,6 @@ my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
 my $DEFAULT_DBDIR = fast_abs_path("$FindBin::RealBin/../db");
-my $dbdir = $DEFAULT_DBDIR;
 my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
 my @KINGDOM = qw"bac arc fun";
@@ -31,7 +30,8 @@ my %KINGDOM = (map { $_ => 1 } @KINGDOM);
 
 my(@Options, $quiet, $kingdom, $threads, 
   $listdb, $updatedb, $fast, $debug, 
-  $operon, $opdist, $addids,
+  $operon, $opdist, $addids, 
+  $listdb, $updatedb, $dbdir,
   $evalue, $lencutoff, $reject, $incseq, 
   $incseqreg, $outseq, $trna, $rrna, $ncrna);
 setOptions();
@@ -39,9 +39,11 @@ setOptions();
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # check all is well
 
+$listdb and list_dbs($dbdir);
+$updatedb and update_dbs($dbdir);
+
 @ARGV or err("No input sequence files provided");
 -d $dbdir or err("--dbdir '$dbdir' does not exist");
-
 
 $trna || $rrna || $ncrna or err("Must choose at least one of --rrna --trna --ncrna");
 $threads > 0 or err("Invalid --threads $threads");
@@ -448,9 +450,9 @@ sub setOptions {
     {OPT=>"quiet!",  VAR=>\$quiet, DESC=>"No screen output"},
     {OPT=>"debug!",  VAR=>\$debug, DESC=>"Debug mode"},
     'DATABASE',
-    {OPT=>"listdb!",VAR=>\&list_dbs, DESC=>"Show installed database"},
-    {OPT=>"updatedb!",VAR=>\&update_dbs, DESC=>"Update databases from internet"},
-    {OPT=>"dbdir=s",VAR=>\$dbdir, DEFAULT=>$ENV{'BARRNAP_DBDIR'} || $DEFAULT_DBDIR, DESC=>"LOcation of databases"},
+    {OPT=>"listdb",VAR=>\$listdb, DESC=>"Show installed database"},
+    {OPT=>"updatedb",VAR=>\$updatedb, DESC=>"Update databases from internet"},
+    {OPT=>"dbdir=s",VAR=>\$dbdir, DEFAULT=>$ENV{'BARRNAP_DBDIR'} || $DEFAULT_DBDIR, DESC=>"Location of databases"},
     "MODE",
     {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
     {OPT=>"rrna!",  VAR=>\$rrna,  DEFAULT=>1, DESC=>"Scan for rRNA, disable with -no-rrna" },
