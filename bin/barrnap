@@ -2,13 +2,14 @@
 use 5.32.0;
 use strict;
 use warnings;
-use Cwd qw"fast_abs_path";
+use Cwd qw"abs_path";
 use List::Util qw"min max";
 use List::MoreUtils qw"uniq minmax";
 use FindBin;
 use File::Temp qw"tempdir";
 use File::Basename;
 use File::Spec;
+use File::Path qw"make_path";
 use Data::Dumper;
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -19,7 +20,8 @@ my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
-my $DEFAULT_DBDIR = fast_abs_path("$FindBin::RealBin/../db");
+my $DEFAULT_DBDIR = abs_path("$FindBin::RealBin/../db");
+my $BUILD_DIR = abs_path("$FindBin::RealBin/../build");
 my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
 my @KINGDOM = qw"bac arc fun";
@@ -30,7 +32,7 @@ my %KINGDOM = (map { $_ => 1 } @KINGDOM);
 
 my(@Options, 
    $quiet, $kingdom, $threads, 
-   $fast, $debug, $trna, $rrna, $ncrna,
+   $fast, $debug, $rrna, $trna, $ncrna,
    $operon, $opdist, $addids, 
    $listdb, $updatedb, $dbdir,
    $evalue, $lencutoff, $reject,
@@ -41,11 +43,12 @@ setOptions();
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # check all is well
 
+#-d $dbdir or err("--dbdir '$dbdir' does not exist");
+
 $listdb and list_dbs($dbdir);
 $updatedb and update_dbs($dbdir);
 
 @ARGV or err("No input sequence files provided");
--d $dbdir or err("--dbdir '$dbdir' does not exist");
 
 $trna || $rrna || $ncrna or err("Must choose at least one of --rrna --trna --ncrna");
 $threads > 0 or err("Invalid --threads $threads");
@@ -371,9 +374,9 @@ sub enumerate_dbs {
 }
 #----------------------------------------------------------------------
 sub list_dbs {
-  #print Dumper($dbdir);
-  my $dbs = enumerate_dbs($dbdir);
-  msg("Database home: $dbdir");
+  my $d = shift // $dbdir;
+  my $dbs = enumerate_dbs($d);
+  msg("Database home: $d");
   my $count=0;
   for my $k (sort keys %$dbs) {
     msg("--kingdom '$k' has: tRNA tmRNA",sort keys %{$dbs->{$k}});;
@@ -385,11 +388,18 @@ sub list_dbs {
 }
 #----------------------------------------------------------------------
 sub update_dbs {
-  -d $dbdir or err("Database folder: $dbdir does not exist");
-  -w $dbdir or err("You don't have permissions to modify the database folder: $dbdir");my $make = "make -C \Q$dbdir/../build\E";
+  my $d = shift // $dbdir;
+  if (! -d $d) {
+    msg("Making folder: $d");
+    make_path($d);
+  }
+  -d $d or err("Database folder: $d does not exist");
+  -w $d or err("You don't have permissions to modify the database folder: $dbdir");
+  my $make = "make -j $threads -C \Q$BUILD_DIR\E DBDIR=\Q$d\E";
   run_cmd("$make bigclean");
   run_cmd("$make install");  
-  list_dbs();
+  list_dbs($d);
+  #msg("Finished updating databases.");
   exit(0);
 }
 #----------------------------------------------------------------------
@@ -452,9 +462,9 @@ sub setOptions {
     {OPT=>"quiet!",  VAR=>\$quiet, DESC=>"No screen output"},
     {OPT=>"debug!",  VAR=>\$debug, DESC=>"Debug mode"},
     'DATABASE',
-    {OPT=>"listdb",VAR=>\$listdb, DESC=>"Show installed database"},
-    {OPT=>"updatedb",VAR=>\$updatedb, DESC=>"Update databases from internet"},
-    {OPT=>"dbdir=s",VAR=>\$dbdir, DEFAULT=>$ENV{'BARRNAP_DBDIR'} || $DEFAULT_DBDIR, DESC=>"Location of databases"},
+    {OPT=>"listdb", VAR=>\$listdb, DESC=>"Show installed database"},
+    {OPT=>"updatedb", VAR=>\$updatedb, DESC=>"Update databases from internet"},
+    {OPT=>"dbdir=s", VAR=>\$dbdir, DEFAULT=>$DEFAULT_DBDIR, DESC=>"Location of databases"},
     "MODE",
     {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
     {OPT=>"rrna!",  VAR=>\$rrna,  DEFAULT=>1, DESC=>"Scan for rRNA, disable with -no-rrna" },
@@ -476,9 +486,9 @@ sub setOptions {
     {OPT=>"outseq=s",  VAR=>\$outseq,  DESC=>"Save RNA hits to a FASTA file"},
   );
 
-#  (!@ARGV) && (usage(1));
-
-  &GetOptions(map {$_->{OPT}, $_->{VAR}} grep { ref } @Options) || usage(1);
+  my @opt = ( map { $_->{OPT}, $_->{VAR} } 
+               grep { ref }  @Options );
+  GetOptions(@opt) or exit(1);
 
   # Now setup default values.
   foreach (@Options) {
