@@ -15,7 +15,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.4.1";
+my $VERSION = "1.4.2";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -26,6 +26,13 @@ my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
 my @KINGDOM = qw"bac arc fun";
 my %KINGDOM = (map { $_ => 1 } @KINGDOM);
+
+my %SNAME = (
+  'RF00001' => "5S",  'RF00002' => "5.8S",
+  'RF00177' => "16S", 'RF01959' => "16S",
+  'RF01960' => "18S", 'RF02540' => "23S",
+  'RF02541' => "23S", 'RF02543' => "28S",
+);
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
@@ -357,6 +364,13 @@ sub parse_infernal {
     }
     my($seq_id, $model_id, $model_acc) = ($x[0], $x[2], $x[3]);
 
+    my $names = "Name=$model_id";
+    if ($ftype eq 'rRNA') {
+      my $sname = $SNAME{$model_acc} or err("No 'S' name for $model_acc");
+      $names = "Name=${sname}_rRNA;Alias=$model_id";
+      $prod = "$sname ribosomal RNA";
+    }
+
     msg("Found $ftype $model_id($model_acc) @ $seq_id:$begin-$end($strand)"); 
 
     push @gff, [
@@ -364,7 +378,7 @@ sub parse_infernal {
       $DOT, # will patch in true version at end
       $ftype,
       $begin, $end, $score, $strand,$DOT, 
-        "Name=$model_id"
+        $names
        .";Dbxref=Rfam:$model_acc"
        .";product=$prod"
     ];
