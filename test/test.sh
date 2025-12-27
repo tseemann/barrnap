@@ -49,6 +49,9 @@ setup () {
   run ! $exe --legacy empty.fa
   [[ "$output" =~ "ERROR" ]]
 }
+@test "Weird poly-G sequence" {
+  run -0 $exe --fast polyg.fa
+}
 @test "Input with no hits" {
   run -0 $exe --legacy nohits.fa
   [[ "$output" =~ "Found 0 features" ]]

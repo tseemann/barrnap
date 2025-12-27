@@ -9,5 +9,6 @@ dependencies:
   - bedtools
   - any2fasta >=0.6.0
   - seqkit
+  - rush
   - make
   - bats-core
