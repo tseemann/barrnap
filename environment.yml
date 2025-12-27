@@ -10,4 +10,4 @@ dependencies:
   - any2fasta >=0.6.0
   - seqkit
   - make
-
+  - bats-core

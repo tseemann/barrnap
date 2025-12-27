@@ -38,70 +38,7 @@ jobs:
           cmsearch -h | grep INFERN
           any2fasta -v
           seqkit version
+          rush version
 
-      - name: Simple tests
-        run: |
-          set +x
-          $EXE --version
-          $EXE --help
-          $EXE --citation
-
-      - name: Install databases
-        run: |
-          set +x
-          ! $EXE --listdb
-          $EXE --updatedb
-          $EXE --listdb
-
-      - name: Expected fails
-        run: |
-          set +x
-          ! $EXE examples/empty.fna
-          ! $EXE examples/null.fna
-          ! $EXE --no-ncrna --no-trna --no-rrna --no-operon examples/small.fna
-          $EXE examples/polyg.fna
-          $EXE --legacy examples/nohits.fna 2>&1 | grep 'Found 0 '
-
-      - name: File format tests
-        run: |
-          set -ux
-          $EXE -q --legacy examples/lepto.gbk.gz
-          $EXE -q --legacy examples/mtb.fa.bz2
-
-      - name: Main tests
-        run: |
-          set -ux
-          exe="$EXE --legacy --quiet --threads $(nproc)"
-          $exe examples/small.fna | grep LSU
-          $exe --kingdom bac examples/bacteria.fna
-          $exe --king arc examples/archaea.fna
-          $exe --k fun examples/fungi.fna
-          $exe --fast --trna  examples/small.fna | grep RF02541
-          $exe --rrna  examples/mtb.fa.bz2 | grep RF00001
-
-      - name: E.coli mega-test
-        run: |
-          set -ux
-          exe="$EXE --quiet --threads $(nproc)"
-          out="bac.gff"
-          $exe --operon --ncrna --trna --addids examples/bacteria.fna > $out
-          grep -w operon $out
-          grep -F 'ID=tRNA-Leu-8' $out
-          grep -F 'Dbxref=Rfam:RF00001' $out
-          for TOOL in infernal aragorn barrnap ; do
-            grep -m 1 -F "$TOOL:" $out
-          done
-          for T in rRNA tRNA tmRNA ncRNA ; do
-            echo -n "Found $T "
-            cut -f3 $out | grep -w $T | wc -l
-          done
-
-      - name: Other output options
-        run: |
-          set -ux
-          small="examples/small.fna"
-          $EXE -q --incseq $small | grep '^##FASTA'
-          $EXE -q --incseq $small | grep '^>'
-          $EXE -q --incseqreg $small | grep '^##sequence-region'
-          out="$PWD/hits.fa"
-          $EXE -q --outseq $out examples/small.fna
+      - name: Run BATS suite
+        run: bats -T --abort test/test.sh
