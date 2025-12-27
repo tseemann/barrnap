@@ -45,10 +45,8 @@ install : $(CMS)
 $(CMDB) :
 	$(CURL) $(CMDB_URL) | $(GUNZIP) > $@
 
-blacklist.txt : $(shell echo *.rRNA.tsv)
-	echo "RF00005" > $@ # tRNA model
-	echo "RF00023" >> $@ # tmRNA model
-	cat $^ | cut -f 1 | sort | uniq >> $@
+blacklist.txt : BLACKLIST.tsv
+	cut -f 1 $< | sort | uniq > $@
 
 %.tsv : %.csv blacklist.txt
 	tail -n +2 $< \
