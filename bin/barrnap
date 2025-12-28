@@ -305,19 +305,26 @@ sub parse_aragorn {
       $x[2] =~ m/(c?)\[(\d+),(\d+)\]/;
       my($begin,$end) = ($2,$3);
       my $strand = $1 ? '-' : '+';
-      $x[1] =~ m/^(tRNA|tmRNA)(\S+?)?(\*)$/ or err("Unexpected tRNA '$x[1]'");
+
+      my $odd=0;
+      if ($x[1] =~ m/\*$/) {
+        $odd=1;
+        chop $x[1];
+      }
+      my $name = $x[1];
+      $name =~ m/^(\w+)/;
       my $type = $1;
-      my $name = "$1$2";
       my $prod = $type eq 'tRNA' 
                ? 'transfer RNA' 
                : 'transfer-messenger RNA';
-      $prod .= " (non-canonical)" if $3;
+      $prod .= " (non-canonical)" if $odd;
+
       my $score = $DOT;
       push @gff, [
         $seqid, $toolver,
         $type, $begin, $end,
         $score, $strand,  $DOT,
-        "Name=$name;product=$prod $x[3]"
+        "Name=$name;product=$prod $x[4]"
       ];
     }
   }
