@@ -126,12 +126,17 @@ if ($ncrna) {
   my $tbl_file = run_infernal($exe, $FASTA, $kingdom, 'ncRNA');
   push @gff,parse_infernal($exe, $tbl_file, 'ncRNA');
 }
-msg("Found", 0+@gff, "features.");
 
 @gff = sort_gff(\@gff);
 gff_add_ids(\@gff) if $addids;
 print_gff(\*STDOUT, \@gff, $incseq, $incseqreg);
 
+my %fcount;
+map { $fcount{$_->[2]}++ } @gff;
+msg("Found", 0+@gff, "features:");
+for my $f (sort keys %fcount) {
+  msg( $fcount{$f}, $f );
+}
 msg("Done.");
 
 #----------------------------------------------------------------------
@@ -318,14 +323,15 @@ sub parse_aragorn {
                ? 'transfer RNA' 
                : 'transfer-messenger RNA';
       $prod .= " (non-canonical)" if $odd;
-
       my $score = $DOT;
+
       push @gff, [
         $seqid, $toolver,
         $type, $begin, $end,
         $score, $strand,  $DOT,
         "Name=$name;product=$prod $x[4]"
       ];
+      msg("Found $name - $prod");
     }
   }
   return @gff;
@@ -389,7 +395,7 @@ sub parse_infernal {
       $prod = "$sname ribosomal RNA";
     }
 
-    msg("Found $ftype $model_id($model_acc) @ $seq_id:$begin-$end($strand)"); 
+    msg("Found $ftype - $prod"); 
 
     push @gff, [
       $seq_id, 

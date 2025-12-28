@@ -14,3 +14,7 @@ RF02546	LSU_trypano_mito	Gene; rRNA
 RF02547	mtPerm-5S	Gene; rRNA
 RF02554	ppoRNA	Gene; rRNA
 RF02555	hveRNA	Gene; rRNA
+RF00023	tmRNA
+RF01849	alpha_tmRNA
+RF01850	beta_tmRNA
+RF01851	cyano_tmRNA
