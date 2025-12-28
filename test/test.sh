@@ -14,6 +14,9 @@ setup () {
   OPERON="${tab}operon${tab}"
   SEQREG="##sequence-region"
 }
+@test "Script syntax check" {
+  run -0 perl -c "$dir/../bin/barrnap"
+}
 @test "Version" {
   run -0 $exe --version
   [[ "$output" =~ "barrnap" ]]
