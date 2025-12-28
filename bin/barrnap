@@ -79,7 +79,8 @@ if ($legacy) {
 msg("Checking dependencies:");
 require_exe(
   'cmsearch', 'bedtools', 'aragorn', 
-  'any2fasta', 'seqkit', 'make');
+  'any2fasta', 'seqkit', 'make'
+);
 
 # Check all input files and make
 my @infile;
@@ -129,7 +130,7 @@ msg("Found", 0+@gff, "features.");
 
 @gff = sort_gff(\@gff);
 gff_add_ids(\@gff) if $addids;
-print_gff(\*STDOUT, \@gff, $incseq);
+print_gff(\*STDOUT, \@gff, $incseq, $incseqreg);
 
 msg("Done.");
 
@@ -149,9 +150,9 @@ sub gff_add_ids {
 sub find_operons {
   my($feats) = @_;
   my @operons;
-  my $outf = "$EXE.gff";
+  my $outf = "$EXE.find_operon.gff";
   open my $fh, '>', $outf;
-  print_gff($fh, $feats, 0);
+  print_gff($fh, $feats, 0, 0);
   my $inf = "$EXE.operon.bed";
   run_cmd("bedtools merge -s -d $opdist -i $outf" 
          ." -c 3 -o count,collapse -delim '-'"
@@ -161,17 +162,14 @@ sub find_operons {
     chomp;
     my @bed = split m/\t/;
     next unless $bed[3] > 1; # not singletons
+    # this makes tRNA-only operons too.
     my $name = $bed[4] =~ /rRNA/ ? 'rRNA' : 'tRNA';
     my($b,$e,$s) = bed2gff_coords($bed[1],$bed[2]);
     push @operons, [
       $bed[0],
       "$EXE:$VERSION",
       'operon',
-      $b,
-      $e,
-      $DOT,
-      $s,
-      $DOT,
+      $b, $e, $DOT, $s, $DOT,
       "Name=$name operon;product=$name operon: $bed[4]"
     ];
   }
@@ -227,11 +225,11 @@ sub sort_gff {
 }
 #----------------------------------------------------------------------
 sub print_gff {
-  my($fh, $feats, $add_seq) = @_;
+  my($fh, $feats, $add_seq, $add_seq_reg) = @_;
   select $fh;
   $fh->autoflush(1);
   print "##gff-version 3\n";
-  if ($incseqreg) {
+  if ($add_seq_reg) {
     run_cmd(
        "seqkit fx2tab --only-id --name --length $FASTA"
      ." | sed 's/\\t/ 1 /'"
@@ -246,11 +244,13 @@ sub print_gff {
     print "##FASTA\n";
     run_cmd("cat $FASTA");
   }
+  $fh->close();
+
   if ($outseq) {
 #   msg("Writing hit sequences to: $outseq");
     my $BED = "$EXE.bed";
     open my $bed, '>', $BED;
-    write_bed($bed, \@gff);
+    write_bed($bed, \@gff); # write ALL features
     close $bed;
     my $bq = $quiet ? "2>$DEVNULL" : "";
     run_cmd("bedtools getfasta -s -fo \Q$outseq\E -fi $FASTA -bed $BED $bq");
