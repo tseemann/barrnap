@@ -15,7 +15,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.4.4";
+my $VERSION = "1.4.5";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -277,6 +277,11 @@ sub aragorn_version {
 sub parse_aragorn {
   my($fname, $toolver) = @_;
   $toolver ||= "$EXE:$VERSION";
+  my %PROD = (
+    'tRNA'   => 'trasnfer RNA',
+    'tmRAN'  => 'transfer-meesenger RNA',
+#    'tmRNA*' => 'circularly
+  );
   my @gff;
   #>AL123456
   #54 genes found
@@ -292,24 +297,27 @@ sub parse_aragorn {
     if (m/^>(\S+)/) {
       $seqid = $1;
     }
-    elsif (m/found/) {
-      msg("aragorn: $_");
+    elsif (m/genes/) {
+      next;
     }
     else {
       my @x = split ' ', $_;
       $x[2] =~ m/(c?)\[(\d+),(\d+)\]/;
       my($begin,$end) = ($2,$3);
       my $strand = $1 ? '-' : '+';
-      my $type = $x[1]; 
-      $type =~ s/-.*$//;
-      #$x[3] =~ m/(^\d+)/;
-      #my $score = $1 // $DOT; 
+      $x[1] =~ m/^(tRNA|tmRNA)(\S+?)?(\*)$/ or err("Unexpected tRNA '$x[1]'");
+      my $type = $1;
+      my $name = "$1$2";
+      my $prod = $type eq 'tRNA' 
+               ? 'transfer RNA' 
+               : 'transfer-messenger RNA';
+      $prod .= " (non-canonical)" if $3;
       my $score = $DOT;
       push @gff, [
         $seqid, $toolver,
         $type, $begin, $end,
         $score, $strand,  $DOT,
-        "Name=$x[1];product=transfer RNA $x[1] $x[4]"
+        "Name=$name;product=$prod $x[3]"
       ];
     }
   }

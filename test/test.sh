@@ -81,6 +81,7 @@ setup () {
   [[ "$output" =~ $SEQREG ]]
   [[ "$output" =~ "##FASTA" ]]
   [[ "$output" =~ ">small" ]]
+  [[ ! $output =~ "tmRNA\*" ]]
   [[ -r "$outseq" ]]
   run -0 grep '>small:' "$outseq"
 }
