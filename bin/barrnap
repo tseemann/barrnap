@@ -15,7 +15,7 @@ use Data::Dumper;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.4.3";
+my $VERSION = "1.4.4";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -77,7 +77,9 @@ if ($legacy) {
   $trna = $ncrna = $operon = 0;
 }
 msg("Checking dependencies:");
-require_exe('cmsearch', 'bedtools', 'aragorn', 'any2fasta', 'make');
+require_exe(
+  'cmsearch', 'bedtools', 'aragorn', 
+  'any2fasta', 'seqkit', 'make');
 
 # Check all input files and make
 my @infile;
@@ -227,6 +229,7 @@ sub sort_gff {
 sub print_gff {
   my($fh, $feats, $add_seq) = @_;
   select $fh;
+  $fh->autoflush(1);
   print "##gff-version 3\n";
   if ($incseqreg) {
     run_cmd(
