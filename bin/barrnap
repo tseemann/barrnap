@@ -2,26 +2,23 @@
 use 5.32.0;
 use strict;
 use warnings;
-use Cwd qw"abs_path";
+use Path::Tiny;
 use List::Util qw"min max";
 use List::MoreUtils qw"uniq minmax";
-use FindBin;
-use File::Temp qw"tempdir";
-use File::Basename;
-use File::Spec;
-use File::Path qw"make_path";
+use File::Spec; # still need for devnull()
 use Data::Dumper;
+use FindBin;
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.4.5";
+my $VERSION = "1.4.6";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
-my $DEFAULT_DBDIR = abs_path("$FindBin::RealBin/../db");
-my $BUILD_DIR = abs_path("$FindBin::RealBin/../build");
+my $DEFAULT_DBDIR = path("$FindBin::RealBin/../db")->realpath;
+my $BUILD_DIR = path("$FindBin::RealBin/../build")->realpath;
 my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
 my @KINGDOM = qw"bac arc fun";
@@ -93,7 +90,7 @@ for my $infile (uniq @ARGV) {
 dbg( Dumper(\@infile) );
 
 # Make a temp folder for all intermediate files
-my $tempdir = $debug ? $DOT : tempdir(CLEANUP=>1);
+my $tempdir = $debug ? $DOT : Path::Tiny->tempdir(CLEANUP=>1);
 chdir($tempdir);
 
 # Write a single combined FASTA file
@@ -447,7 +444,7 @@ sub update_dbs {
   my $d = shift // $dbdir;
   if (! -d $d) {
     msg("Making folder: $d");
-    make_path($d);
+    path($d)->mkdir;
   }
   -d $d or err("Database folder: $d does not exist");
   -w $d or err("You don't have permissions to modify the database folder: $dbdir");
