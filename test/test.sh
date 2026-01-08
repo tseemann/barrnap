@@ -56,6 +56,7 @@ setup () {
 }
 @test "Weird poly-G sequence" {
   run -0 $exe --fast polyg.fa
+  [[ "$output" =~ "WARNING" ]]
 }
 @test "Input with no hits" {
   run -0 $exe --legacy nohits.fa

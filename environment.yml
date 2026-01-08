@@ -4,11 +4,15 @@ channels:
 dependencies:
   - perl >=5.32
   - perl-list-moreutils
+  - perl-path-tiny
+  - perl-json
   - infernal >=1.1.2
   - aragorn
   - bedtools
   - any2fasta >=0.6.0
   - seqkit
+  - diamond
+  - pyrodigal
   - rush
   - make
   - bats-core

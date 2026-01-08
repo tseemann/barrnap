@@ -7,12 +7,13 @@ use List::Util qw"min max";
 use List::MoreUtils qw"uniq minmax";
 use File::Spec; # still need for devnull()
 use Data::Dumper;
+use Storable qw"dclone";
 use FindBin;
 
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.4.6";
+my $VERSION = "1.5.0";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -36,8 +37,9 @@ my %SNAME = (
 
 my(@Options, 
    $quiet, $kingdom, $threads, $legacy,
-   $fast, $debug, $rrna, $trna, $ncrna,
-   $operon, $opdist, $addids, 
+   $fast, $debug, 
+   $rrna, $trna, $ncrna, $mrna,
+   $operon, , $opdist, $addids, 
    $listdb, $updatedb, $dbdir,
    $evalue, $lencutoff, $reject,
    $incseq, $incseqreg, $outseq, 
@@ -71,12 +73,13 @@ msg("Obtained from $URL");
 if ($legacy) {
   msg("Swiching to legacy barrnap < 1.0 mode");
   $rrna=1;
-  $trna = $ncrna = $operon = 0;
+  $trna = $ncrna = $operon = $mrna = 0;
 }
 msg("Checking dependencies:");
 require_exe(
   'cmsearch', 'bedtools', 'aragorn', 
-  'any2fasta', 'seqkit', 'make'
+  'any2fasta', 'seqkit', 'make',
+  'pyrodigal', 'diamond'
 );
 
 # Check all input files and make
@@ -91,6 +94,7 @@ dbg( Dumper(\@infile) );
 
 # Make a temp folder for all intermediate files
 my $tempdir = $debug ? $DOT : Path::Tiny->tempdir(CLEANUP=>1);
+my $origdir = Path::Tiny->cwd;
 chdir($tempdir);
 
 # Write a single combined FASTA file
@@ -118,6 +122,9 @@ if ($operon) {
   @gff = sort_gff(\@gff); # for bedtools
   push @gff, find_operons(\@gff);
 }
+if ($mrna) {
+  push @gff, find_genes($FASTA, $kingdom);
+}
 if ($ncrna) {
   my $exe = 'cmscan';
   my $tbl_file = run_infernal($exe, $FASTA, $kingdom, 'ncRNA');
@@ -126,6 +133,8 @@ if ($ncrna) {
 
 @gff = sort_gff(\@gff);
 gff_add_ids(\@gff) if $addids;
+
+chdir($origdir);
 print_gff(\*STDOUT, \@gff, $incseq, $incseqreg);
 
 my %fcount;
@@ -134,7 +143,86 @@ msg("Found", 0+@gff, "features:");
 for my $f (sort keys %fcount) {
   msg( $fcount{$f}, $f );
 }
+
 msg("Done.");
+
+#----------------------------------------------------------------------
+sub find_genes {
+  my($fasta) = @_;
+  
+  # check if we have enough sequence
+  if (-s $fasta < 19_000) {
+    wrn("Skipping mRNA search - sequence too short");
+    return;
+  }
+  
+  # first find mRNA 
+  my $gff = "$EXE.pyrodigal.gff";
+  my $faa = "$EXE.pyrodigal.faa";
+  run_cmd(
+    "pyrodigal -g 11 -c -p single -j $threads" 
+   ." -i $fasta -f gff -o $gff -a $faa"
+  );
+  # make mRNA features
+  my @mrna;
+  foreach ( path($gff)->lines({chomp=>1}) ) {
+    next if m/^#/;
+    my @f = split m/\t/;
+    $f[1] =~ s/_v/:/;
+    $f[2] = 'mRNA';
+    $f[7] = $DOT; # no phase for mRNA
+    push @mrna, [ @f ];
+  }
+  
+  return @mrna;
+  #=======================================
+  # DOn't run the DIamond stuff yet
+  # Need to sort out where the DB will be  
+  
+
+  # nake a CDS for each mRNA
+  my @cds = @{ dclone(\@mrna) }; # deep copy
+  my $cds_tool = diamond_version();
+  my %idx_of;
+  for my $i (0 .. $#cds) { 
+    my $c = $cds[$i];
+    if ( $$c[8] =~ m/ID=([^;]+)/ ) {
+      $idx_of{$1} = $i;
+    }
+    $mrna[$i][8] = ''; # blank out mRNA attrs
+    $$c[1] = $cds_tool; # fix tool
+    $$c[2] = 'CDS';     # ftype
+    $$c[7] = 0;         # phase=0
+    $$c[8] = "product=hypothetical protein";
+  }
+  
+  # Now blast the predicted proteins
+  my $bls = "$EXE.diamond.tsv";
+  run_cmd(
+    "diamond blastp -e 1E-6 -k 1"
+   ." --quiet -p $threads"
+   ." -f 6 qseqid evalue stitle"
+   ." -q $faa -o $bls -d sprot"
+  );
+  # K12_1 (# 337 # 2799 # 1 # ID=1_1;partial=00;start_type=ATG;rbs_motif=GGAG/GAGG;rbs_spacer=5-10bp;gc_cont=0.531)
+  # 2.62e-119
+  # P0ABQ4 1.5.1.3~~~folA~~~Dihydrofolate reductase~~~COG026
+  foreach ( path($bls)->lines({chomp=>1}) ) {
+    my($qid,$evalue,$stitle) = split m/\t/;
+    my $c = $cds[ $idx_of{$qid} ];
+    $c->[5] = $evalue;
+    $stitle =~ s/^(\S+)\s+//;
+    my $acc = $1;
+    my($ec,$gene,$prod,$cog) = split m"~~~", $stitle;
+    my @attr = "product=$prod";
+    unshift @attr, "Name=$gene" if $gene;
+    push @attr, "Dbxref=UniProt:$acc" if $acc;
+    push @attr, "Dbxref=COG:$cog" if $cog;
+    push @attr, "Dbxref=EC:$ec" if $ec;
+    $c->[8] = join(';', @attr);
+  }
+  return (@mrna, @cds)
+}
 
 #----------------------------------------------------------------------
 sub gff_add_ids {
@@ -151,6 +239,10 @@ sub gff_add_ids {
 #----------------------------------------------------------------------
 sub find_operons {
   my($feats) = @_;
+  if (@$feats < 1) {
+    wrn("Skipping operon detection - no RNA features");
+    return;
+  }
   my @operons;
   my $outf = "$EXE.find_operon.gff";
   open my $fh, '>', $outf;
@@ -267,10 +359,18 @@ sub run_aragorn {
   return $outfile;
 }
 #----------------------------------------------------------------------
+sub diamond_version {
+  # diamond version 2.1.18
+  my($ver) = qx"diamond --version";
+  chomp $ver;
+  $ver =~ s/\h+version\h+/:/;
+  return $ver;
+}
+#----------------------------------------------------------------------
 sub aragorn_version {
   #----------------------------
   #ARAGORN v1.2.41 Dean Laslett
-  #----------------------------
+  #----------[B------------------
   my $help = join '', qx"aragorn -h";
   $help =~ m/(ARAGORN) v([\d\.]+)/s or err("Can not parse aragorn version");;
   return lc($1).":$2";
@@ -471,6 +571,14 @@ sub msg {
   print STDERR $line;
 }
 #----------------------------------------------------------------------
+sub wrn {
+  msg("WARNING:", @_);
+}
+#----------------------------------------------------------------------
+sub dmp {
+  dbg(Dumper(@_));
+}
+#----------------------------------------------------------------------
 sub dbg {
   print STDERR "[$EXE] DEBUG:\n", @_,"\n" if $debug;
 }
@@ -525,6 +633,8 @@ sub setOptions {
     {OPT=>"trna!",  VAR=>\$trna, DEFAULT=>1, DESC=>"Find tRNA/tmRNA, disable with --no-trna" },
     {OPT=>"ncrna!", VAR=>\$ncrna, DEFAULT=>1, DESC=>"Find ncRNA, disable with --no-ncrna" },
     {OPT=>"operon!", VAR=>\$operon, DEFAULT=>1, DESC=>"Idenitfy RNA opersons, disanle wioth --no-operson" },
+    {OPT=>"mrna!", VAR=>\$mrna, DEFAULT=>1, DESC=>"Idenitfy mRNA coding regions, disable with --no-mrna" },
+    
     {OPT=>"opdist=i", VAR=>\$opdist, DEFAULT=>200,  DESC=>"Operon clustering threshold" },
     "SPEED",
     {OPT=>"threads=i", VAR=>\$threads, DEFAULT=>1,  DESC=>"CPU cores to use"},

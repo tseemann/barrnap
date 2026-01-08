@@ -6,28 +6,24 @@
 
 # Barrnap
 
-BAsic Rapid Ribosomal RNA Predictor
+Annotate all the bacterial RNA in your genome
 
 ## Description
 
-Barrnap predicts the location of ribosomal RNA genes in genomes.
-It supports bacteria (5S,23S,16S), archaea (5S,5.8S,23S,16S),
-metazoan mitochondria (12S,16S) and eukaryotes (5S,5.8S,28S,18S).
+Barrnap is an annotation tool for identifying
+RNA features in microbial genomes. It can find:
+* `rRNA` - ribosomal RNA (5S,16S,23S)
+* `tRNA` - transfer RNA 
+* `tmRNA` - transfer messenger RNA
+* `ncRNA` - non-coding RNA 
+* `mRNA` - messenger RNA (containing CDS)
+* `operon` - specifically the rRNA/tRNA operon
 
-It takes FASTA DNA sequence as input, and write GFF3 as output.
-It uses the new `nhmmer` tool that comes with HMMER 3.1 for HMM searching in RNA:DNA style.
-Multithreading is supported and one can expect roughly linear speed-ups with more CPUs.
+You provide a FASTA file, you get a GFF3 file.
+Too easy.
 
 ## Installation
 
-### Requirements
-* [Perl >= 5.18](https://dev.perl.org/perl5/) (core modules only)
-* [infernal >= 1.1](http://eddylab.org/infernal/) 
-* [bedtools >= 2.27.0](http://bedtools.readthedocs.io/en/latest/)
-* [any2fasta >= 0.6.0](https://github.com/tseemann/any2fasta)
-
-### Conda
-Install [Conda](https://conda.io/docs/) or [Miniconda](https://conda.io/miniconda.html):
 ```
 conda install -c bioconda -c conda-forge barrnap
 ```
@@ -68,10 +64,11 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 
 ### Search
 * `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fub`
-* `--no-rna` disables rRNA scan
-* `--trna` enables tRNA scan
-* `--ncrna` enables ncRNA scan
-* `--operon` enables RNA operon annotation
+* `--no-rrna` disables rRNA scan
+* `--no-trna` disables tRNA scan
+* `--no-ncrna` disables ncRNA scan
+* `--no-mrna` disables mRNA scan
+* `--no-operon` disables RNA-operon annotation
 
 ### Speed
 * `--threads` is how many CPUs to uase
@@ -87,7 +84,6 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 * `--incseq` will include the full input sequences in the output GFF
 * `--incseqreg` will include `##sequence-region` headers in the GFF
 * `--outseq` creates a FASTA file with the hit sequences
-* `--debug` will use keep all intermediate files in `.`
 
 ## Where does the name come from?
 
