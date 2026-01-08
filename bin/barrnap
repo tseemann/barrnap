@@ -13,7 +13,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.5.1";
+my $VERSION = "1.5.2";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -98,7 +98,7 @@ my $origdir = Path::Tiny->cwd;
 chdir($tempdir);
 
 # Write a single combined FASTA file
-my $FASTA = "$EXE.fasta";
+my $FASTA = File::Spec->rel2abs("$EXE.fasta");
 my($a2f_opt,$sk_opt) = $quiet ? ('-q','--quiet') : ('','');
 run_cmd("any2fasta -k $a2f_opt @infile > $FASTA.tmp");
 run_cmd("seqkit seq $sk_opt -g --min-len 1 -u -w 60 $FASTA.tmp > $FASTA");
