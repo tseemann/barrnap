@@ -13,7 +13,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.5.0";
+my $VERSION = "1.5.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
 my $AUTHOR = 'Torsten Seemann';
@@ -544,7 +544,7 @@ sub update_dbs {
   my $d = shift // $dbdir;
   if (! -d $d) {
     msg("Making folder: $d");
-    path($d)->mkdir;
+    path($d)->mkpath; # mkdir in later versions
   }
   -d $d or err("Database folder: $d does not exist");
   -w $d or err("You don't have permissions to modify the database folder: $dbdir");
