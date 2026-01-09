@@ -37,7 +37,7 @@ jobs:
           aragorn -h | grep '^ARAGORN v'
           cmscan -h | grep INFERN
           cmsearch -h | grep INFERN
-          transterm | head -n 1
+          ! transterm | head -n 1
           pyrodigal --version
           diamond --version
           bedtools --version
