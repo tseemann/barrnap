@@ -28,25 +28,29 @@ Too easy.
 conda install -c bioconda -c conda-forge barrnap
 ```
 
-## Usage
+## Quick start
 
 ```
-% barrnap --quiet examples/small.fna
+# Backward compatible with the old versions - just rRNA
+% barrnap --legacy test/small.fna
 ##gff-version 3
-P.marinus	barrnap:1.0.1	rRNA	353314	354793	0	+	.	Name=16S_rRNA;product=16S ribosomal RNA
-P.marinus	barrnap:1.0.1	rRNA	355464	358334	0	+	.	Name=23S_rRNA;product=23S ribosomal RNA
-P.marinus	barrnap:1.0.1	rRNA	358433	358536	7.5e-07	+	.	Name=5S_rRNA;product=5S ribosomal RNA
+small	infernal:1.1.5	rRNA	293312	294796	1.7e-49	+	.	Name=16S_rRNA;Alias=SSU_rRNA_bacteria;Dbxref=Rfam:RF00177;product=16S ribosomal RNA
+small	infernal:1.1.5	rRNA	295463	298336	4.8e-07	+	.	Name=23S_rRNA;Alias=LSU_rRNA_bacteria;Dbxref=Rfam:RF02541;product=23S ribosomal RNA
+small	infernal:1.1.5	rRNA	298432	298548	1.1e-13	+	.	Name=5S_rRNA;Alias=5S_rRNA;Dbxref=Rfam:RF00001;product=5S ribosomal RNA
 
-% barrnap -q -k mito examples/mitochondria.fna 
-##gff-version 3
-AF346967.1	barrnap:1.0.1	rRNA	643	1610	.	+	.	Name=12S_rRNA;product=12S ribosomal RNA
-AF346967.1	barrnap:1.0.1	rRNA	1672	3228	.	+	.	Name=16S_rRNA;product=16S ribosomal RNA
-  
-% barrnap -o rrna.fa - < contigs.fa > rrna.gff
-% head -n 3 rrna.fa
->16S_rRNA::gi|329138943|tpg|BK006945.2|:455935-456864(-)
-ACGGTCGGGGGCATCAGTATTCAATTGTCAGAGGTGAAATTCTTGGATT
-TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
+# By default we find all the RNA
+
+mall   infernal:1.1.5    ncRNA          128     274   5.4e-05 +  .  Name=Cobalamin;Dbxref=Rfam:RF00174;product=Cobalamin riboswitch aptamer
+small   aragorn:1.2.41   tmRNA        15305   15616   .       -  .  Name=tmRNA;product=transfer-messenger RNA (non-canonical) ANKIVSFSRQTAPVAA*
+small  aragorn:1.2.41    tRNA         86968   87039   .       +  .  Name=tRNA-Asn;product=transfer RNA (gtt)
+small  barrnap:1.6.0     mRNA        188710  189808  .        +  .  product=messenger RNA
+small  pyrodigal:3.7.0   RBS         188710  188715  119.0    +  .  product=ribosome binding site AGGAG
+small  pyrodigal:3.7.0   CDS         188726  189808  85.6     +  0  productr=hypothetical protein
+small  TransTermHP:2.09  terminator  189857  189880  100      +  .  product=Rho-independent terminator
+small  barrnap:1.6.0     operon      295463  298548  .        +  .  Name=rRNA operon;product=rRNA operon: rRNA-rRNA
+small  infernal:1.1.5    rRNA        295463  298336  4.8e-07  +  .  Name=23S_rRNA;Alias=LSU_rRNA_bacteria;Dbxref=Rfam:RF02541;product=23S ribosomal RNA
+small  infernal:1.1.5    rRNA        298432  298548  1.1e-13  +  .  Name=5S_rRNA;Alias=5S_rRNA;Dbxref=Rfam:RF00001;product=5S ribosomal RNA
+
 ```
 
 ## Options
@@ -55,7 +59,7 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 * `--help` show help and exit
 * `--version` print version in form `barrnap X.Y` and exit 
 * `--citation` print a citation and exit
-* `--debug` will write all tempfiles to '.' and print gumpf
+* `--debug` will write all tempfiles to '.' and print debug ingo
 
 ### Database management
 * `--listdb` to see what DBs are installed
@@ -63,11 +67,12 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 * `--dbdir` to use a different DB folder
 
 ### Search
-* `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fub`
+* `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fun`
+* `--legacy` only does rRNA scan, like versions < 1.0 did.
 * `--no-rrna` disables rRNA scan
 * `--no-trna` disables tRNA scan
 * `--no-ncrna` disables ncRNA scan
-* `--no-mrna` disables mRNA scan
+* `--no-mrna` disables mRNA scan (inc CDS,RBS,terminator)
 * `--no-operon` disables RNA-operon annotation
 
 ### Speed
@@ -76,14 +81,29 @@ TATTGAAGACTAACTACTGCGAAAGCATTTGCCAAGGACGTTTTCATTA
 
 ### Filtering
 * `--evalue` is the cut-off for hits to keep
-* `--lencutoff` is the proportion of the full length that qualifies as `partial` match
-* `--reject` will not include hits below this proportion of the expected length
+* `--lencutoff` is the proportion of the full length that qualifies as `partial` match (IGNORED)
+* `--reject` will not include hits below this proportion of the expected length (IGNORED)
 
 ### Output
 * `--quiet` will not print any messages to `stderr`
 * `--incseq` will include the full input sequences in the output GFF
 * `--incseqreg` will include `##sequence-region` headers in the GFF
 * `--outseq` creates a FASTA file with the hit sequences
+* `--adids` will add unique `ID=` tags to each  GFF3 feature
+
+
+## FAQ
+
+## What has changed since the 0.9 version?
+
+* Barrnap now finds **all** RNA, not just `rRNA`. 
+  Use the `--legacy` option for backward compatiblity
+* I no longer use nucleotide HMMs and local alignment.
+  To get that behaviour use `--fast`.
+* The `mito` model is gone, the `fun` model is in.
+* The `--reject` and `--lencutoff` paramters are
+  ignored now, as we use global CMs now.
+* SILVA is no longer used, all models are from Rfam.
 
 ## Where does the name come from?
 
@@ -93,12 +113,29 @@ given the new backronym _BAsic Rapid Ribosomal RNA Predictor_.
 The project was originally spawned at CodeFest 2013 in Berlin, Germany 
 by Torsten Seemann and Tim Booth.
 
+## References
+
+* [Rfam](https://rfam.org/)
+* [Infernal](http://eddylab.org/infernal/)
+* [Ribovore](https://pmc.ncbi.nlm.nih.gov/articles/PMC8359073/)
+* [Aragorn](https://pmc.ncbi.nlm.nih.gov/articles/PMC373265/)
+* [Pyrodigal](https://github.com/althonos/pyrodigal)
+* [TransTermHP](https://transterm.cbcb.umd.edu/)
+* [Bedtools](https://bedtools.readthedocs.io/en/latest/)
+* [Seqkit](https://bioinf.shenwei.me/seqkit/)
+* [Diamond](https://github.com/bbuchfink/diamond)
+
+## Feedback
+
+File questions, bugs, or ideas on the 
+[Issues page](https://github.com/tseemann/barrnap/issues)
+
 ## License
 
-* Barrnap: [GPLv3](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE)
-* Rfam: [CC0](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE.Rfam)
+[GPLv3](https://raw.githubusercontent.com/tseemann/barrnap/master/LICENSE)
 
 ## Author
 
-Torsten Seemann
+[Torsten Seemann](https://tseemann.github.io)
+
 
