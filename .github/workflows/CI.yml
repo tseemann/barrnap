@@ -2,12 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
   pull_request:
-    branches: [master]
-
-env:
-  EXE: "bin/barrnap --threads 4"
+    branches:
+      - master
+    paths-ignore:
+      - 'README.md'
 
 jobs:
   build:
@@ -31,14 +34,17 @@ jobs:
       - name: Check tools
         run: |
           set +x
-          bedtools --version
           aragorn -h | grep '^ARAGORN v'
           cmscan -h | grep INFERN
-          make --version | head -n 1
           cmsearch -h | grep INFERN
+          transterm | head -n 1
+          pyrodigal --version
+          diamond --version
+          bedtools --version
           any2fasta -v
           seqkit version
-          rush version
+          bats -v
+          make --version | head -n 1
 
       - name: Run BATS suite
         run: bats -T --abort test/test.sh

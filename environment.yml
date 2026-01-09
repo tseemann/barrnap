@@ -15,6 +15,5 @@ dependencies:
   - diamond
   - pyrodigal
   - transtermhp >=2
-  - rush
   - make
   - bats-core
