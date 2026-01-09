@@ -16,7 +16,7 @@ RNA features in microbial genomes. It can find:
 * `tRNA` - transfer RNA 
 * `tmRNA` - transfer messenger RNA
 * `ncRNA` - non-coding RNA 
-* `mRNA` - messenger RNA (containing CDS)
+* `mRNA` - messenger RNA, inc. `RBS`, `CDS`, `terminator`
 * `operon` - specifically the rRNA/tRNA operon
 
 You provide a FASTA file, you get a GFF3 file.

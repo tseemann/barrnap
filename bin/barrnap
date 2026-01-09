@@ -3,6 +3,7 @@ use 5.32.0;
 use strict;
 use warnings;
 use Path::Tiny;
+use File::Which qw"which";
 use List::Util qw"min max";
 use List::MoreUtils qw"uniq minmax";
 use File::Spec; # still need for devnull()
@@ -13,9 +14,9 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.5.2";
+my $VERSION = "1.6.0";
 my $EXE = $FindBin::RealScript;
-my $DESC = "Rapid micrboial rRNA/tRNA/ncRNA prediction";
+my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
 my $URL = 'https://github.com/tseemann/barrnap';
 my $DEFAULT_DBDIR = path("$FindBin::RealBin/../db")->realpath;
@@ -24,20 +25,26 @@ my $DEVNULL = File::Spec->devnull;
 my $DOT = '.';
 my @KINGDOM = qw"bac arc fun";
 my %KINGDOM = (map { $_ => 1 } @KINGDOM);
-
+my %GCODE = ('bac'=>11, 'arc'=>25, 'fun'=>1);
 my %SNAME = (
   'RF00001' => "5S",  'RF00002' => "5.8S",
   'RF00177' => "16S", 'RF01959' => "16S",
   'RF01960' => "18S", 'RF02540' => "23S",
   'RF02541' => "23S", 'RF02543' => "28S",
 );
-
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# constants for GFF3
+use constant {
+  SEQ_ID=>0, SOURCE=>1, FTYPE=>2,
+  START=>3, FINISH=>4, SCORE=>5, STRAND=>6,
+  PHASE=>7, ATTR=>8,
+};
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # command line options
 
 my(@Options, 
    $quiet, $kingdom, $threads, $legacy,
-   $fast, $debug, 
+   $fast, $debug, $gcode,
    $rrna, $trna, $ncrna, $mrna,
    $operon, , $opdist, $addids, 
    $listdb, $updatedb, $dbdir,
@@ -64,8 +71,11 @@ $reject > 0 or err("Invalid --reject cutoff $reject");
 
 exists $KINGDOM{$kingdom} or
   err("Imvalid --kingdom '$kingdom'. Try:", values(%KINGDOM) );
-# FIXME: store with --kingdom database  
-my $code = $kingdom =~ m/^(bac|arc)$/ ? 11 : 1;
+
+if ($gcode eq 'auto' or not $gcode) {
+  $gcode = $GCODE{$kingdom};
+}
+msg("Using genetic code table $gcode");
 
 msg("This is $EXE $VERSION by $AUTHOR");
 msg("Obtained from $URL");
@@ -110,7 +120,7 @@ run_cmd("seqkit faidx $sk_opt $FASTA");
 my @gff;
 if ($trna) {
   my $toolver = aragorn_version();
-  my $ara_file = run_aragorn($FASTA, $code);
+  my $ara_file = run_aragorn($FASTA, $gcode);
   push @gff, parse_aragorn($ara_file, $toolver);
 }
 if ($rrna) {
@@ -123,7 +133,7 @@ if ($operon) {
   push @gff, find_operons(\@gff);
 }
 if ($mrna) {
-  push @gff, find_genes($FASTA, $kingdom);
+  push @gff, find_genes($FASTA, $kingdom, $gcode);
 }
 if ($ncrna) {
   my $exe = 'cmscan';
@@ -138,7 +148,7 @@ chdir($origdir);
 print_gff(\*STDOUT, \@gff, $incseq, $incseqreg);
 
 my %fcount;
-map { $fcount{$_->[2]}++ } @gff;
+map { $fcount{$_->[FTYPE]}++ } @gff;
 msg("Found", 0+@gff, "features:");
 for my $f (sort keys %fcount) {
   msg( $fcount{$f}, $f );
@@ -147,8 +157,138 @@ for my $f (sort keys %fcount) {
 msg("Done.");
 
 #----------------------------------------------------------------------
+sub rbs_spacer_length {
+  my($s) = @_; # pyrodgial rbs_spacer
+  return $s =~ m/(\d+)bp/ ? $1 : 0;
+}
+#----------------------------------------------------------------------
+sub rbs_length {
+  my($s) = @_; # pyrodigal rbs_motif
+  return 0 if $s =~ /None/i;
+  return $1 if $s =~ /^(\d+)/;
+  $s =~ s|^.*/||;
+  return length($s);
+}
+#----------------------------------------------------------------------
+# this is naive code, ignores %XX encoding
+# should use URI::Escape::unescape ?
+sub attr_to_hash {
+  my($attrs) = @_;
+  my @kv = split m';', $attrs;
+  return { map { split m/=/,$_,2 } @kv }
+  ;
+}
+#----------------------------------------------------------------------
+sub cds_to_mrna {
+  my($cds) = @_;
+
+  my $mrna = dclone($cds);
+  $mrna->[SOURCE] = "$EXE:$VERSION";
+  $mrna->[FTYPE] = 'mRNA';
+  $mrna->[SCORE] = $DOT;
+  $mrna->[PHASE] = $DOT; # no phase for mRNA
+
+  my $attr = attr_to_hash( $mrna->[ATTR] );
+  my $rbs_len = rbs_length( $$attr{'rbs_motif'} );
+  my $rlen = $rbs_len + rbs_spacer_length( $$attr{'rbs_spacer'} );
+  
+  if ($mrna->[STRAND] eq '+') {
+    $mrna->[START] -= $rlen;
+  } else {
+    $mrna->[FINISH] += $rlen;
+  }
+  $mrna->[ATTR] = 'product=messenger RNA';
+  
+  if ($rlen > 0) {
+    $mrna->[ATTR] .= " with RBS";
+  
+    # add the RBS
+    my $rbs = dclone($cds);
+    $rbs->[FTYPE] = 'RBS';
+    $rbs->[PHASE] = $DOT;
+    if ($rbs->[STRAND] eq '+') {
+      $rbs->[START] = $mrna->[START];
+      $rbs->[FINISH] = $mrna->[START] + $rbs_len - 1;
+    } else {
+      $rbs->[FINISH] = $mrna->[FINISH] + $rbs_len - 1;
+      $rbs->[START] = $mrna->[FINISH];
+    }
+    $rbs->[ATTR] = "product=ribosome binding site "
+                 . $attr->{'rbs_motif'} ;
+    return ($rbs, $mrna);
+  }
+  return $mrna;
+}
+#----------------------------------------------------------------------
+sub find_terminators {
+  my($fasta, $cds) = @_;
+
+  my $ttexe = 'transterm';
+  my $termi = "$EXE.$ttexe.out";
+  my $coords = "$EXE.$ttexe.coords";
+  my$ttver = transterm_version();
+
+  my $geneid = 0;
+  my @coord = map { tsv(
+    ++$geneid,
+    $_->[STRAND] eq '+' ? $_->[START] : $_->[FINISH],
+    $_->[STRAND] eq '+' ? $_->[FINISH] : $_->[START],
+    $_->[SEQ_ID],
+  ); } @$cds;
+  path($coords)->spew(\@coord);
+  
+  my $datfile = path(which($ttexe))
+                ->parent
+                ->child("../data/expterm.dat")
+                ->realpath;
+  $datfile->is_file
+    or err("Can't locate 'expterm.dat' for $ttexe");
+
+  run_cmd("$ttexe -S -p $datfile $FASTA $coords 1> $termi 2> $termi.log");
+
+  #       0     1     2 3      4      5     6
+  #  TERM 19    15310 - 15327  -      F     99     - 12.7 -4.0 |bidir  
+  #       (name)(start - end)  (sense)(loc) (conf) (h p) (tail) (notes)
+  my @term;
+  my %term;
+  my $seqid;
+  $geneid = undef;
+  foreach ( path($termi)->lines({chomp=>1}) ) {
+    if (m/^SEQUENCE\s+(\S+)/) {
+      $seqid = $1;
+    }
+    elsif ($seqid and m/^(\d+)/) {
+      $geneid = $1;
+    }
+    elsif (m/^\s*TERM\s+/) {
+      # FIXME - we need to collate all the hits
+      # and choose the best one in each section
+      # they ar ein coord order not in score order
+      my(undef,@x) = split ' ';
+      my $term = [
+        $seqid, $ttver, 'terminator',
+        min($x[1], $x[3]),
+        max($x[1], $x[3]),
+        $x[6], # score
+        $x[4], # straind
+        $DOT,  # phase
+        'product=Rho-independent terminator',      
+      ];
+      push $term{ $geneid }->@*, $term;
+    }
+  }
+  # find best terminator in each block
+  for my $id (keys %term) {
+    my @t = sort { $b->[SCORE] <=> $a->[SCORE] } 
+      $term{$id}->@*;
+    push @term, $t[0];
+  }
+  msg("Found",0+@term,"Rho-independent terminator");
+  return @term;
+}
+#----------------------------------------------------------------------
 sub find_genes {
-  my($fasta) = @_;
+  my($fasta, $kdonm, $ttable) = @_;
   
   # check if we have enough sequence
   if (-s $fasta < 19_000) {
@@ -160,40 +300,44 @@ sub find_genes {
   my $gff = "$EXE.pyrodigal.gff";
   my $faa = "$EXE.pyrodigal.faa";
   run_cmd(
-    "pyrodigal -g 11 -c -p single -j $threads" 
+    "pyrodigal -g $ttable -c -p single -j $threads" 
    ." -i $fasta -f gff -o $gff -a $faa"
   );
-  # make mRNA features
+
+
+  my @cds;
   my @mrna;
   foreach ( path($gff)->lines({chomp=>1}) ) {
     next if m/^#/;
     my @f = split m/\t/;
-    $f[1] =~ s/_v/:/;
-    $f[2] = 'mRNA';
-    $f[7] = $DOT; # no phase for mRNA
-    push @mrna, [ @f ];
+    $f[SOURCE] =~ s/_v/:/;
+    push @mrna, cds_to_mrna(\@f);
+    $f[ATTR] = "productr=hypothetical protein";
+    push @cds, [ @f ];
   }
+
+  my @term = find_terminators($fasta, \@cds);
   
-  return @mrna;
+  return (@mrna, @cds, @term);
   #=======================================
   # DOn't run the DIamond stuff yet
   # Need to sort out where the DB will be  
   
 
   # nake a CDS for each mRNA
-  my @cds = @{ dclone(\@mrna) }; # deep copy
+#  my @cds = @{ dclone(\@mrna) }; # deep copy
   my $cds_tool = diamond_version();
   my %idx_of;
   for my $i (0 .. $#cds) { 
     my $c = $cds[$i];
-    if ( $$c[8] =~ m/ID=([^;]+)/ ) {
+    if ( $$c[ATTR] =~ m/ID=([^;]+)/ ) {
       $idx_of{$1} = $i;
     }
-    $mrna[$i][8] = ''; # blank out mRNA attrs
-    $$c[1] = $cds_tool; # fix tool
-    $$c[2] = 'CDS';     # ftype
-    $$c[7] = 0;         # phase=0
-    $$c[8] = "product=hypothetical protein";
+    $mrna[$i][ATTR] = ''; # blank out mRNA attrs
+    $$c[SOURCE] = $cds_tool; # fix tool
+    $$c[FTYPE]  = 'CDS';     # ftype
+    $$c[PHASE]  = 0;         # phase=0
+    $$c[ATTR]   = "product=hypothetical protein";
   }
   
   # Now blast the predicted proteins
@@ -210,7 +354,7 @@ sub find_genes {
   foreach ( path($bls)->lines({chomp=>1}) ) {
     my($qid,$evalue,$stitle) = split m/\t/;
     my $c = $cds[ $idx_of{$qid} ];
-    $c->[5] = $evalue;
+    $c->[SCORE] = $evalue;
     $stitle =~ s/^(\S+)\s+//;
     my $acc = $1;
     my($ec,$gene,$prod,$cog) = split m"~~~", $stitle;
@@ -219,7 +363,7 @@ sub find_genes {
     push @attr, "Dbxref=UniProt:$acc" if $acc;
     push @attr, "Dbxref=COG:$cog" if $cog;
     push @attr, "Dbxref=EC:$ec" if $ec;
-    $c->[8] = join(';', @attr);
+    $c->[ATTR] = join(';', @attr);
   }
   return (@mrna, @cds)
 }
@@ -229,11 +373,11 @@ sub gff_add_ids {
   my($feats) = @_;
   my %count;
   for my $f (@$feats) {
-    my $nv = $f->[-1]; # tagsin last column
+    my $nv = $f->[ATTR]; # tagsin last column
     my $t = $nv =~ m/Name=([^;]+)/ ? $1 : $f->[2];
     $t =~ s/\s/_/g;
     $count{$t}++; 
-    $f->[-1] = join ';', "ID=$t-$count{$t}", $nv;
+    $f->[ATTR] = join ';', "ID=$t-$count{$t}", $nv;
   }
 }
 #----------------------------------------------------------------------
@@ -277,12 +421,12 @@ sub write_bed {
   # https://en.wikipedia.org/wiki/General_feature_format#GFF_general_structure
   # https://en.wikipedia.org/wiki/BED_(file_format)#Format
     print {$fh} tsv(
-      $_->[0],   # chr
-      $_->[3]-1, # begin 0-based
-      $_->[4],   # end (exclusive)
+      $_->[SEQ_ID],   # chr
+      $_->[START]-1, # begin 0-based
+      $_->[FINISH],   # end (exclusive)
       $DOT,      # name
       1000,      # socre 1-1000
-      $_->[6],   # strand
+      $_->[STRAND],   # strand
     );
   }
 }
@@ -308,9 +452,9 @@ sub tsv {
 }
 #----------------------------------------------------------------------
 sub gff_cmp {
-  return ($a->[0] cmp $b->[0])   # name
-      || ($a->[3] <=> $b->[3])   # start
-      || ($b->[4] <=> $a->[4]) ; # end (rev)
+  return ($a->[SEQ_ID] cmp $b->[SEQ_ID])  
+      || ($a->[START] <=> $b->[START])   
+      || ($b->[FINISH] <=> $a->[FINISH]) ;
 }
 #----------------------------------------------------------------------
 sub sort_gff {
@@ -357,6 +501,13 @@ sub run_aragorn {
   my $cmd = "aragorn -w -gc$code -o '$outfile' '$fasta'";
   run_cmd($cmd);
   return $outfile;
+}
+#----------------------------------------------------------------------
+sub transterm_version {
+  # TransTermHP v2.09 (built on Oct  8 2025)
+  my($ver) = qx"transterm -h 2>&1";
+  $ver =~ m/^(\S+)\s+v(\S+)/ or err("Can't parse: $ver");
+  return "$1:$2";
 }
 #----------------------------------------------------------------------
 sub diamond_version {
@@ -558,9 +709,8 @@ sub update_dbs {
 #----------------------------------------------------------------------
 sub require_exe {
   for my $exe (@_) {
-    my($which) = qx"which $exe 2>$DEVNULL";
+    my $which = which($exe);
     $which or err("Can not find required '$exe' in PATH");
-    chomp $which;
     msg("Found $exe - $which");
   }
 }
@@ -628,6 +778,7 @@ sub setOptions {
     {OPT=>"dbdir=s", VAR=>\$dbdir, DEFAULT=>$DEFAULT_DBDIR, DESC=>"Location of databases"},
     "MODE",
     {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
+    {OPT=>"gcodes", VAR=>\$gcode, DEFAULT=>'auto', DESC=>"Genetic code table" },
     {OPT=>"legacy!", VAR=>\$legacy,  DEFAULT=>0, DESC=>"Simulate barrnap<1.0 - only --rrna)" },
     {OPT=>"rrna!",  VAR=>\$rrna, DEFAULT=>1, DESC=>"Find rRNA, disable with --no-rrna" },
     {OPT=>"trna!",  VAR=>\$trna, DEFAULT=>1, DESC=>"Find tRNA/tmRNA, disable with --no-trna" },

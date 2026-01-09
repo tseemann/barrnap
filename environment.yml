@@ -6,6 +6,7 @@ dependencies:
   - perl-list-moreutils
   - perl-path-tiny
   - perl-json
+  - perl-file-which
   - infernal >=1.1.2
   - aragorn
   - bedtools
@@ -13,6 +14,7 @@ dependencies:
   - seqkit
   - diamond
   - pyrodigal
+  - transtermhp >=2
   - rush
   - make
   - bats-core
