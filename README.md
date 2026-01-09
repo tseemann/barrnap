@@ -32,6 +32,7 @@ conda install -c bioconda -c conda-forge barrnap
 
 ```
 # Backward compatible with the old versions - just rRNA
+
 % barrnap --legacy test/small.fna
 ##gff-version 3
 small	infernal:1.1.5	rRNA	293312	294796	1.7e-49	+	.	Name=16S_rRNA;Alias=SSU_rRNA_bacteria;Dbxref=Rfam:RF00177;product=16S ribosomal RNA
@@ -40,6 +41,8 @@ small	infernal:1.1.5	rRNA	298432	298548	1.1e-13	+	.	Name=5S_rRNA;Alias=5S_rRNA;D
 
 # By default we find all the RNA
 
+% barrnap --threads 8 test/small.fna
+##gff-version 3
 mall   infernal:1.1.5    ncRNA          128     274   5.4e-05 +  .  Name=Cobalamin;Dbxref=Rfam:RF00174;product=Cobalamin riboswitch aptamer
 small   aragorn:1.2.41   tmRNA        15305   15616   .       -  .  Name=tmRNA;product=transfer-messenger RNA (non-canonical) ANKIVSFSRQTAPVAA*
 small  aragorn:1.2.41    tRNA         86968   87039   .       +  .  Name=tRNA-Asn;product=transfer RNA (gtt)
@@ -51,6 +54,20 @@ small  barrnap:1.6.0     operon      295463  298548  .        +  .  Name=rRNA op
 small  infernal:1.1.5    rRNA        295463  298336  4.8e-07  +  .  Name=23S_rRNA;Alias=LSU_rRNA_bacteria;Dbxref=Rfam:RF02541;product=23S ribosomal RNA
 small  infernal:1.1.5    rRNA        298432  298548  1.1e-13  +  .  Name=5S_rRNA;Alias=5S_rRNA;Dbxref=Rfam:RF00001;product=5S ribosomal RNA
 
+# You can make full GFFs with header and sequence
+
+% barrnap --incseq --incseqreg test/fake.fna
+##gff-version 3
+##sequence-region contig001 1 733412
+##sequence-region contig002 1 542170
+##sequence-region contig003 1 31088
+...
+##FASTA
+>contig001
+CCGATTAGACCACTTTGCTGATAACAGTATTCATATCAATTGATTAGAAAGATTTCTTTT
+TTGGTCACATTTTGATCACTTTTGAAGAAAACAATTTTTCTTCTAGGTTTTCCTTATGAG
+AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
+...
 ```
 
 ## Options
