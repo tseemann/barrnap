@@ -43,9 +43,9 @@ small	infernal:1.1.5	rRNA	298432	298548	1.1e-13	+	.	Name=5S_rRNA;Alias=5S_rRNA;D
 
 % barrnap --threads 8 test/small.fna
 ##gff-version 3
-mall   infernal:1.1.5    ncRNA          128     274   5.4e-05 +  .  Name=Cobalamin;Dbxref=Rfam:RF00174;product=Cobalamin riboswitch aptamer
-small   aragorn:1.2.41   tmRNA        15305   15616   .       -  .  Name=tmRNA;product=transfer-messenger RNA (non-canonical) ANKIVSFSRQTAPVAA*
-small  aragorn:1.2.41    tRNA         86968   87039   .       +  .  Name=tRNA-Asn;product=transfer RNA (gtt)
+mall   infernal:1.1.5    ncRNA          128     274  5.4e-05  +  .  Name=Cobalamin;Dbxref=Rfam:RF00174;product=Cobalamin riboswitch aptamer
+small   aragorn:1.2.41   tmRNA        15305   15616  .        -  .  Name=tmRNA;product=transfer-messenger RNA (non-canonical) ANKIVSFSRQTAPVAA*
+small  aragorn:1.2.41    tRNA         86968   87039  .        +  .  Name=tRNA-Asn;product=transfer RNA (gtt)
 small  barrnap:1.6.0     mRNA        188710  189808  .        +  .  product=messenger RNA
 small  pyrodigal:3.7.0   RBS         188710  188715  119.0    +  .  product=ribosome binding site AGGAG
 small  pyrodigal:3.7.0   CDS         188726  189808  85.6     +  0  productr=hypothetical protein
