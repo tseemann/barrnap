@@ -22,22 +22,74 @@ CURL := curl
 
 MODELS := $(foreach K,$(KINGS),$(foreach C,$(CLASSES),$(K).$(C)))
 CMS := $(patsubst %,%.cm,$(MODELS))
+DMNDS := $(patsubst %,%.dmnd,$(KINGS))
 
 CMDB_URL := "http://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/Rfam.cm.gz"
 CMDB := Rfam
 
-all: $(CMS)
+SPROT_URL := "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz"
+SPROT := Sprot
 
-install : $(CMS)
+all: $(CMS) $(DMNDS)
+
+install : $(CMS) $(DMNDS)
 	for K in $(KINGS); do \
 	  dir="$(DBDIR)/$$K" ; \
 	  mkdir -p "$$dir" ;
 	  $(RM) "$$dir"/* ; \
+	  $(CP) $$K.dmnd "$$dir/" ; \
 	  $(CP) $$K.*.cm "$$dir/" ; \
 	  for C in "$$dir"/*.cm ; do \
 	    cmpress "$$C" ; \
 	  done ; \
 	done
+	ls -1s $(DBDIR)/*/*.{cm,dmnd}
+
+$(SPROT) :
+	$(CURL) $(SPROT_URL) | $(GUNZIP) > $@
+
+# the \K tells grep to discard around the match?
+$(SPROT).taxids : $(SPROT)
+	grep -oP 'OX=\K[0-9]+' $< \
+	| sort | uniq > $@
+
+$(SPROT).lineages : $(SPROT).taxids
+	taxonkit lineage $< > $@
+
+bac.ox : $(SPROT).lineages
+	grep -F ';Bacteria;' $< \
+	| cut -f1 | sed -E 's/(.*)/ OX=\1 /' > $@
+arc.ox : $(SPROT).lineages
+	grep -F ';Archaea;' $< \
+	| cut -f1 | sed -E 's/(.*)/ OX=\1 /' > $@
+fun.ox : $(SPROT).lineages
+	grep -F ';Fungi;' $< \
+	| cut -f1 | sed -E 's/(.*)/ OX=\1 /' > $@
+
+%.dmnd : %.faa
+	diamond makedb --quiet \
+	--in $< --db $*
+
+%.faa : %.seq
+	#TDIR=$(shell mktemp -d)
+	mmseqs easy-linclust \
+	$< mm.$* mm.dir.$* \
+	--min-seq-id 0.9 -c 0.8 -v 2
+	$(CP) mm.$(*)_rep_seq.fasta $@
+
+%.seq : %.ox $(SPROT)
+	seqkit fx2tab $(SPROT) \
+	| grep -F -f $< \
+	| grep -v -i -F 'fragment' \
+	| grep -v -P 'UPF\d{4}' \
+	| grep -v -F 'Uncharacterized protein' \
+	| seqkit tab2fx \
+	| seqkit rmdup -w 0 --by-seq \
+	| seqkit sort -w 0 -r --by-length \
+	| sed -E 's/^>sp\|/>sp:/' \
+	| sed -E 's/\|[^ ]* / /' \
+	| sed -E 's/ OS=.*$$//' \
+	> $@
 
 %.cm : %.tsv $(CMDB)
 	cmfetch -f $(CMDB) <(cut -f1 $<) > $@
@@ -63,11 +115,12 @@ arc.ncRNA.csv :
 fun.ncRNA.csv :
 	$(CURL) https://raw.githubusercontent.com/Rfam/rfam-taxonomy/refs/heads/master/domains/eukaryota.csv > $@
 
-
 clean :
 	$(RM) *.cm *.ids *.i1? *~
 	$(RM) *.ncRNA.tsv blacklist.txt
+	$(RM) *.taxids *.lineages
+	$(RM) *.ox *.seq *.faa *.dmnd
+	$(RM) -r mm.*
 
 bigclean : clean
 	$(RM) $(CMDB) *.csv
-	
