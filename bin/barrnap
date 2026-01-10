@@ -14,7 +14,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.7.0";
+my $VERSION = "1.7.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
@@ -314,7 +314,7 @@ sub find_genes {
     push @mrna, cds_to_mrna(\@orf);
     # keep track of the original
     if ( $orf[ATTR] =~ m/ID=([^;]+)/ ) {
-      $idx_of{$1} = $#cds;
+      $idx_of{$1} = $#cds + 1;
     }
     $orf[ATTR] = "productr=hypothetical protein";
     push @cds, [ @orf ];
