@@ -108,7 +108,6 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * `--outseq` creates a FASTA file with the hit sequences
 * `--adids` will add unique `ID=` tags to each  GFF3 feature
 
-
 ## FAQ
 
 ## What has changed since the 0.9 version?
@@ -121,6 +120,13 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * The `--reject` and `--lencutoff` paramters are
   ignored now, as we use global CMs now.
 * SILVA is no longer used, all models are from Rfam.
+
+## Can I use Barrnap instead of Prokka ?
+
+Yes. It's faster, and finds more features.
+It's missing some things like `EC_number`
+and `COG` annotations, and doen't produce
+Genbank files.
 
 ## Where does the name come from?
 
