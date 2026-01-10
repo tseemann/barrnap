@@ -79,6 +79,7 @@ fun.ox : $(SPROT).lineages
 
 %.seq : %.ox $(SPROT)
 	seqkit fx2tab $(SPROT) \
+	| cut -f1,2 \
 	| grep -F -f $< \
 	| grep -v -i -F 'fragment' \
 	| grep -v -P 'UPF\d{4}' \

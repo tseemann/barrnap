@@ -14,7 +14,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.6.0";
+my $VERSION = "1.7.0";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
@@ -87,9 +87,9 @@ if ($legacy) {
 }
 msg("Checking dependencies:");
 require_exe(
-  'cmsearch', 'bedtools', 'aragorn', 
-  'any2fasta', 'seqkit', 'make',
-  'pyrodigal', 'diamond'
+  'cmsearch', 'cmscan', 'bedtools', 'aragorn', 
+  'any2fasta', 'seqkit', 'make', 'transterm',
+  'pyrodigal', 'diamond', 'taxonkit'
 );
 
 # Check all input files and make
@@ -288,7 +288,7 @@ sub find_terminators {
 }
 #----------------------------------------------------------------------
 sub find_genes {
-  my($fasta, $kdonm, $ttable) = @_;
+  my($fasta, $kdom, $ttable) = @_;
   
   # check if we have enough sequence
   if (-s $fasta < 19_000) {
@@ -304,68 +304,62 @@ sub find_genes {
    ." -i $fasta -f gff -o $gff -a $faa"
   );
 
-
   my @cds;
   my @mrna;
+  my %idx_of;
   foreach ( path($gff)->lines({chomp=>1}) ) {
     next if m/^#/;
-    my @f = split m/\t/;
-    $f[SOURCE] =~ s/_v/:/;
-    push @mrna, cds_to_mrna(\@f);
-    $f[ATTR] = "productr=hypothetical protein";
-    push @cds, [ @f ];
+    my @orf = split m/\t/;
+    $orf[SOURCE] =~ s/_v/:/;
+    push @mrna, cds_to_mrna(\@orf);
+    # keep track of the original
+    if ( $orf[ATTR] =~ m/ID=([^;]+)/ ) {
+      $idx_of{$1} = $#cds;
+    }
+    $orf[ATTR] = "productr=hypothetical protein";
+    push @cds, [ @orf ];
   }
 
   my @term = find_terminators($fasta, \@cds);
   
-  return (@mrna, @cds, @term);
-  #=======================================
-  # DOn't run the DIamond stuff yet
-  # Need to sort out where the DB will be  
-  
-
   # nake a CDS for each mRNA
-#  my @cds = @{ dclone(\@mrna) }; # deep copy
-  my $cds_tool = diamond_version();
-  my %idx_of;
   for my $i (0 .. $#cds) { 
-    my $c = $cds[$i];
-    if ( $$c[ATTR] =~ m/ID=([^;]+)/ ) {
-      $idx_of{$1} = $i;
-    }
     $mrna[$i][ATTR] = ''; # blank out mRNA attrs
-    $$c[SOURCE] = $cds_tool; # fix tool
-    $$c[FTYPE]  = 'CDS';     # ftype
-    $$c[PHASE]  = 0;         # phase=0
-    $$c[ATTR]   = "product=hypothetical protein";
+    my $c = $cds[$i];
+    ## $$c[SOURCE] = $cds_tool; # fix tool
+    $c->[FTYPE] = 'CDS';     # ftype
+    $c->[PHASE] = 0;         # phase=0
+    $c->[ATTR]  = "product=hypothetical protein";
   }
-  
+  #dmp(\%idx_of);
   # Now blast the predicted proteins
+  my $cds_tool = diamond_version();
   my $bls = "$EXE.diamond.tsv";
   run_cmd(
-    "diamond blastp -e 1E-6 -k 1"
+    "diamond blastp -e $evalue -k 1"
    ." --quiet -p $threads"
    ." -f 6 qseqid evalue stitle"
-   ." -q $faa -o $bls -d sprot"
+   ." -q $faa -o $bls -d $dbdir/$kdom/$kdom.dmnd"
   );
   # K12_1 (# 337 # 2799 # 1 # ID=1_1;partial=00;start_type=ATG;rbs_motif=GGAG/GAGG;rbs_spacer=5-10bp;gc_cont=0.531)
   # 2.62e-119
-  # P0ABQ4 1.5.1.3~~~folA~~~Dihydrofolate reductase~~~COG026
+  # sP:P0ABQ4 Dihydrofolate reductasee
   foreach ( path($bls)->lines({chomp=>1}) ) {
-    my($qid,$evalue,$stitle) = split m/\t/;
+    #dbg("DIAMOND: $_");
+    my($qid,$score,$stitle) = split m/\t/;
     my $c = $cds[ $idx_of{$qid} ];
-    $c->[SCORE] = $evalue;
-    $stitle =~ s/^(\S+)\s+//;
-    my $acc = $1;
-    my($ec,$gene,$prod,$cog) = split m"~~~", $stitle;
-    my @attr = "product=$prod";
-    unshift @attr, "Name=$gene" if $gene;
-    push @attr, "Dbxref=UniProt:$acc" if $acc;
-    push @attr, "Dbxref=COG:$cog" if $cog;
-    push @attr, "Dbxref=EC:$ec" if $ec;
-    $c->[ATTR] = join(';', @attr);
+    my($acc,$prod) = split ' ', $stitle, 2;
+    $prod =~ s/\s+$//; # why is there space at end?
+    my $name = '';
+    if ($prod =~ m/([A-Z][a-z][a-z][A-Z])$/) {
+      $name = "Name=$1;";
+    }
+    $c->[ATTR] = "${name}product=$prod;Dbxref=$acc";
+    $c->[SCORE] = $score;
+    $c->[SOURCE] = $cds_tool;
+    msg("Annotated CDS: $prod");
   }
-  return (@mrna, @cds)
+  return (@mrna, @cds, @term);
 }
 
 #----------------------------------------------------------------------
@@ -604,9 +598,7 @@ sub parse_infernal {
   my($exe, $fname, $ftype) = @_;
   my $toolver = "$EXE:$VERSION"; # will overide later
   my @gff;
-  open my $fh, '<', $fname;
-  while (<$fh>) {
-    chomp;
+  foreach ( path($fname)->lines({chomp=>1}) ) {
     # # Version:         1.1.5 (Sep 2023)
     if (m/Version:\s+([\d\.]+)/) {
       $toolver = "infernal:$1";
