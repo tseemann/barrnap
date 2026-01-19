@@ -74,7 +74,7 @@ fun.ox : $(SPROT).lineages
 	#TDIR=$(shell mktemp -d)
 	mmseqs easy-linclust \
 	$< mm.$* mm.dir.$* \
-	--min-seq-id 0.9 -c 0.8 -v 2
+	--min-seq-id 0.9 -c 0.8 -v 2 --shuffle 0
 	$(CP) mm.$(*)_rep_seq.fasta $@
 
 %.seq : %.ox $(SPROT)
