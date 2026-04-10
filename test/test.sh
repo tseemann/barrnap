@@ -47,33 +47,34 @@ setup () {
   [[ "$output" =~ "--kingdom" ]]
 }
 @test "Null input" {
-  run ! $exe --legacy null.fa
+  run ! $exe null.fa
   [[ "$output" =~ "ERROR" ]]
 }
 @test "Empry input" {
-  run ! $exe --legacy empty.fa
+  run ! $exe empty.fa
   [[ "$output" =~ "ERROR" ]]
 }
 @test "Weird poly-G sequence" {
   run -0 $exe --fast polyg.fa
-  [[ "$output" =~ "WARNING" ]]
+  [[ "$output" =~ "Found 0 features" ]]
 }
 @test "Input with no hits" {
-  run -0 $exe --legacy nohits.fa
+  run -0 $exe nohits.fa
   [[ "$output" =~ "Found 0 features" ]]
 }
 @test "Fast mode" {
-  run -0 $exe -q --fast --legacy small.fa
+  run -0 $exe -q --fast small.fa
   [[ "$output" =~ $RRNA ]]
 }
 @test "Mini bacterial genome" {
   local outseq="${BATS_TMPDIR}/outseq.fa"
-  run -0 $exe --quiet --outseq "$outseq" \
-    --incseqreg --incseq --addids small.fa
+  run -0 $exe --all --quiet \
+    --outseq "$outseq" \
+    --incseqreg --incseq --addids \
+    small.fa
   [[ "$output" =~ $TRNA ]]
   [[ "$output" =~ $RRMA ]]
   [[ "$output" =~ $NCRNA ]]
-  [[ "$output" =~ $OPERON ]]
   [[ "$output" =~ "ID=5S" ]]
   [[ "$output" =~ "ID=16S" ]]
   [[ "$output" =~ "ID=23S" ]]
@@ -90,7 +91,7 @@ setup () {
 
 barrnap_legacy() {
   run -0 $exe --quiet \
-    --kingdom "$1" --legacy "$1.fa"
+    --kingdom "$1" "$1.fa"
   [[   "$output" =~ $RRMA  ]]
   [[ ! "$output" =~ $TRNA  ]]
   [[ ! "$output" =~ $NCRNA ]]

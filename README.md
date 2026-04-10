@@ -17,7 +17,6 @@ RNA features in microbial genomes. It can find:
 * `tmRNA` - transfer messenger RNA
 * `ncRNA` - non-coding RNA 
 * `mRNA` - messenger RNA, inc. `RBS`, `CDS`, `terminator`
-* `operon` - specifically the rRNA/tRNA operon
 
 You provide a FASTA file, you get a GFF3 file.
 Too easy.
@@ -33,15 +32,15 @@ conda install -c bioconda -c conda-forge barrnap
 ```
 # Backward compatible with the old versions - just rRNA
 
-% barrnap --legacy test/small.fna
+% barrnap test/small.fna
 ##gff-version 3
 small	infernal:1.1.5	rRNA	293312	294796	1.7e-49	+	.	Name=16S_rRNA;Alias=SSU_rRNA_bacteria;Dbxref=Rfam:RF00177;product=16S ribosomal RNA
 small	infernal:1.1.5	rRNA	295463	298336	4.8e-07	+	.	Name=23S_rRNA;Alias=LSU_rRNA_bacteria;Dbxref=Rfam:RF02541;product=23S ribosomal RNA
 small	infernal:1.1.5	rRNA	298432	298548	1.1e-13	+	.	Name=5S_rRNA;Alias=5S_rRNA;Dbxref=Rfam:RF00001;product=5S ribosomal RNA
 
-# By default we find all the RNA
+# Use --all to find all the RNA
 
-% barrnap --threads 8 test/small.fna
+% barrnap --all --threads 8 test/small.fna
 ##gff-version 3
 mall   infernal:1.1.5    ncRNA          128     274  5.4e-05  +  .  Name=Cobalamin;Dbxref=Rfam:RF00174;product=Cobalamin riboswitch aptamer
 small   aragorn:1.2.41   tmRNA        15305   15616  .        -  .  Name=tmRNA;product=transfer-messenger RNA (non-canonical) ANKIVSFSRQTAPVAA*
@@ -85,12 +84,11 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 ### Search
 * `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fun`
-* `--legacy` only does rRNA scan, like versions < 1.0 did.
+* `--all` only does rRNA scan, like versions < 1.0 did.
 * `--no-rrna` disables rRNA scan
-* `--no-trna` disables tRNA scan
-* `--no-ncrna` disables ncRNA scan
-* `--no-mrna` disables mRNA scan (inc CDS,RBS,terminator)
-* `--no-operon` disables RNA-operon annotation
+* `--trna` enables tRNA scan
+* `--ncrna` enabled ncRNA scan
+* `--mrna` enables mRNA scan (inc CDS,RBS,terminator)
 
 ### Speed
 * `--threads` is how many CPUs to uase
@@ -98,8 +96,6 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 ### Filtering
 * `--evalue` is the cut-off for hits to keep
-* `--lencutoff` is the proportion of the full length that qualifies as `partial` match (IGNORED)
-* `--reject` will not include hits below this proportion of the expected length (IGNORED)
 
 ### Output
 * `--quiet` will not print any messages to `stderr`
@@ -120,6 +116,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * The `--reject` and `--lencutoff` paramters are
   ignored now, as we use global CMs now.
 * SILVA is no longer used, all models are from Rfam.
+* The `--reject` and `--lencutoff` parameters are no longer supported
 
 ## Can I use Barrnap instead of Prokka ?
 
