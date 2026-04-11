@@ -40,6 +40,7 @@ jobs:
           ! transterm | head -n 1
           pyrodigal --version
           diamond --version
+          ziggypep -v
           bedtools --version
           any2fasta -v
           seqkit version
