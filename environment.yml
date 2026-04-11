@@ -19,3 +19,4 @@ dependencies:
   - taxonkit
   - make
   - bats-core
+  - mmseqs2
