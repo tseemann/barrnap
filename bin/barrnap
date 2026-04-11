@@ -14,7 +14,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.10.1";
+my $VERSION = "1.10.2";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
@@ -579,15 +579,20 @@ sub parse_aragorn {
   my $seqid;
   while (<$fh>) {
     chomp;
-    if (m/^>(\S+)/) {
-      $seqid = $1;
-    }
-    elsif (m/genes/) {
+    if (m/\hgene/) {
+      # 1 gene found
+      # 8 genes found
+      # >end    74 sequences 55 tRNA genes 1 tmRNA genes, nothing found in 60 sequences, (18.92% sensitivity)
       next;
+    }
+    elsif (m/^>(\S+)/) {
+      # this rule in second to avoid '>end' line
+      $seqid = $1;
     }
     else {
       my @x = split ' ', $_;
-      $x[2] =~ m/(c?)\[(\d+),(\d+)\]/;
+      $x[2] =~ m/(c?)\[(\d+),(\d+)\]/ 
+        or err("Can not parse $toolver '$_'");
       my($begin,$end) = ($2,$3);
       my $strand = $1 ? '-' : '+';
 
