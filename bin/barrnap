@@ -14,7 +14,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.9.0";
+my $VERSION = "1.9.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
@@ -71,7 +71,7 @@ $evalue > 0 or err("Invalid --evalue $evalue");
 #$reject > 0 or err("Invalid --reject cutoff $reject");
 
 exists $KINGDOM{$kingdom} or
-  err("Imvalid --kingdom '$kingdom'. Try:", values(%KINGDOM) );
+  err("Imvalid --kingdom '$kingdom'. CHoose from: @KINGDOM");
 
 if ($gcode eq 'auto' or not $gcode) {
   $gcode = $GCODE{$kingdom};
