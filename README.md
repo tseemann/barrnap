@@ -91,7 +91,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * `--no-rrna` disables rRNA scan
 * `--trna` enables tRNA scan
 * `--ncrna` enabled ncRNA scan
-* `--mrna` enables mRNA scan (included CDS,RBS,terminator)
+* `--mrna` enables mRNA scan (included CDS,RBS,sig_pep,terminator)
 
 ### Speed
 * `--threads` is how many CPUs to uase
@@ -136,6 +136,25 @@ given the new backronym _BAsic Rapid Ribosomal RNA Predictor_.
 The project was originally spawned at CodeFest 2013 in Berlin, Germany 
 by Torsten Seemann and Tim Booth.
 
+## Databases
+
+Barrnap sotres its database files in the `db` 
+folder, with a subfolder for each `--kingdom`.
+```
+% barrnap --listdb
+
+[barrnap] Database home: /home/tseemann/git/barrnap/db
+[barrnap] --kingdom 'arc' has: tRNA tmRNA ncRNA rRNA
+[barrnap] --kingdom 'bac' has: tRNA tmRNA ncRNA rRNA
+[barrnap] --kingdom 'fun' has: tRNA tmRNA ncRNA rRNA
+```
+Because the Rfam database does not update very often,
+you rarely need to update them yourself using `--updatedb`.
+When there are new models, I will update them 
+myself and make a new release of `barrnap` which
+will likely have other bugfixes and features
+you will want anyway.
+
 ## References
 
 * [Rfam](https://rfam.org/)
@@ -144,6 +163,7 @@ by Torsten Seemann and Tim Booth.
 * [Aragorn](https://pmc.ncbi.nlm.nih.gov/articles/PMC373265/)
 * [Pyrodigal](https://github.com/althonos/pyrodigal)
 * [TransTermHP](https://transterm.cbcb.umd.edu/)
+* [Ziggpep](https://github.com/tseemann/ziggypep)
 * [Bedtools](https://bedtools.readthedocs.io/en/latest/)
 * [Seqkit](https://bioinf.shenwei.me/seqkit/)
 * [Diamond](https://github.com/bbuchfink/diamond)
