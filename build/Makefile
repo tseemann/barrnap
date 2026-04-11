@@ -18,7 +18,7 @@ GUNZIP := gzip -d -c
 RM := rm -f -v
 CP := cp -f -v
 WGET ::= wget --continue
-CURL := curl
+CURL := curl -L
 
 MODELS := $(foreach K,$(KINGS),$(foreach C,$(CLASSES),$(K).$(C)))
 CMS := $(patsubst %,%.cm,$(MODELS))
@@ -53,8 +53,15 @@ $(SPROT).taxids : $(SPROT)
 	grep -oP 'OX=\K[0-9]+' $< \
 	| sort | uniq > $@
 
-$(SPROT).lineages : $(SPROT).taxids
-	taxonkit lineage $< > $@
+taxdump.tar.gz :
+	$(CURL) http://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz \
+	> $@
+
+names.dmp : taxdump.tar.gz
+	tar zxvf $<
+
+$(SPROT).lineages : $(SPROT).taxids names.dmp
+	taxonkit lineage --data-dir . $< > $@
 
 bac.ox : $(SPROT).lineages
 	grep -F ';Bacteria;' $< \
@@ -122,6 +129,7 @@ clean :
 	$(RM) *.taxids *.lineages
 	$(RM) *.ox *.seq *.faa *.dmnd
 	$(RM) -r mm.*
+	$(RM) *.dmp readme.txt gc.prt
 
 bigclean : clean
 	$(RM) $(CMDB) *.csv
