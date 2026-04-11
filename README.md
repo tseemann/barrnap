@@ -18,7 +18,7 @@ arhchea, fungi). It can find:
 * `tRNA` - transfer RNA 
 * `tmRNA` - transfer messenger RNA
 * `ncRNA` - non-coding RNA 
-* `mRNA` - messenger RNA, inc. `RBS`, `CDS`, `terminator`
+* `mRNA` - messenger RNA, inc. `RBS`, `CDS`, `sig_pep`, `terminator`
 
 You provide a FASTA file, you get a GFF3 file.
 Too easy.
@@ -109,7 +109,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 ## FAQ
 
-## What has changed since the 0.9 version?
+### What has changed since the 0.9 version?
 
 * Barrnap now finds **all** RNA, not just `rRNA`. 
   Use the `--legacy` option for backward compatiblity
@@ -121,14 +121,14 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * SILVA is no longer used, all models are from Rfam.
 * The `--reject` and `--lencutoff` parameters are no longer supported
 
-## Can I use Barrnap instead of Prokka ?
+### Can I use Barrnap instead of Prokka ?
 
 Yes. It's faster, and finds more features.
 It's missing some things like `EC_number`
 and `COG` annotations, and doen't produce
 Genbank files.
 
-## Where does the name come from?
+### Where does the name come from?
 
 The name Barrnap was originally derived from _Bacterial/Archaeal Ribosomal RNA Predictor_.
 However it has since been extended to support mitochondrial and eukaryotic rRNAs, and has been
