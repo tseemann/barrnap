@@ -588,7 +588,7 @@ sub parse_aragorn {
         $seqid, $toolver,
         $type, $begin, $end,
         $score, $strand,  $DOT,
-        "Name=$name;product=$prod $x[4]"
+        "Name=$name;product=$prod" . (defined $x[4] ? " $x[4]" : "")
       ];
       msg("Found $name - $prod");
     }
