@@ -5,7 +5,6 @@ dependencies:
   - perl >=5.32
   - perl-list-moreutils
   - perl-path-tiny
-  - perl-json
   - perl-file-which
   - infernal >=1.1.2
   - aragorn
