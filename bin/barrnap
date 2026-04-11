@@ -566,7 +566,7 @@ sub parse_aragorn {
     }
     else {
       my @x = split ' ', $_;
-      $x[2] =~ m/(c?)\[(\d+),(\d+)\]/;
+      next unless defined $x[2] && $x[2] =~ m/(c?)\[(\d+),(\d+)\]/;
       my($begin,$end) = ($2,$3);
       my $strand = $1 ? '-' : '+';
 
