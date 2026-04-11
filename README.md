@@ -11,8 +11,10 @@ Annotate all the bacterial RNA in your genome
 ## Description
 
 Barrnap is an annotation tool for identifying
-RNA features in microbial genomes. It can find:
-* `rRNA` - ribosomal RNA (5S,16S,23S)
+RNA features in microbial genomes (bacteria,
+arhchea, fungi). It can find:
+
+* `rRNA` - ribosomal RNA
 * `tRNA` - transfer RNA 
 * `tmRNA` - transfer messenger RNA
 * `ncRNA` - non-coding RNA 
@@ -24,7 +26,8 @@ Too easy.
 ## Installation
 
 ```
-conda install -c bioconda -c conda-forge barrnap
+conda create -n barrnap -c bioconda -c conda-forge barrnap
+conda activate barrnap
 ```
 
 ## Quick start
@@ -88,7 +91,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * `--no-rrna` disables rRNA scan
 * `--trna` enables tRNA scan
 * `--ncrna` enabled ncRNA scan
-* `--mrna` enables mRNA scan (inc CDS,RBS,terminator)
+* `--mrna` enables mRNA scan (included CDS,RBS,terminator)
 
 ### Speed
 * `--threads` is how many CPUs to uase
