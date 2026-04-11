@@ -14,7 +14,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.10.0";
+my $VERSION = "1.10.1";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
@@ -64,7 +64,7 @@ $updatedb and update_dbs($dbdir);
 
 @ARGV or err("No input sequence files provided");
 
-$trna || $rrna || $ncrna or err("Must choose at least one of --rrna --trna --ncrna");
+$rrna || $trna || $ncrna || $mrna or err("Must choose at least one of --rrna --trna --ncrna --mrna");
 $threads > 0 or err("Invalid --threads $threads");
 $evalue > 0 or err("Invalid --evalue $evalue");
 #$lencutoff > 0 or err("Invalid --lencutoff $lencutoff");
