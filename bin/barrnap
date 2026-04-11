@@ -14,7 +14,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.9.3";
+my $VERSION = "1.10.0";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
@@ -367,16 +367,28 @@ sub find_genes {
 
   # FInd sig_pep in the predicted proteins
   my @sigpep;
-  my $zig_tool = "ziggpep:FIXME";
   my $zig = "$EXE.ziggypep.tsv";
-  my $opt = $quiet ? '-q' : '';
-  run_cmd("ziggypep $opt -s $faa > $zig");
-  for my $sp ( path($zig)->lines({chomp=>1}) ) { 
-#    push @sigpep, [
-#    ];
+  my $zp_ver = ziggypep_version();
+  my $zp_opt = $quiet ? '-q' : '';
+  run_cmd("ziggypep $zp_opt -s $faa > $zig");
+  # https://github.com/tseemann/ziggypep?tab=readme-ov-file#quick-start
+  # SAMD00000344.contig00001_10     12      MILVSLFVGVIC
+  # SAMD00000344.contig00001_11     23      MDNNGKSYNKVLLMLTLLLGTFS  
+  #dmp(\%idx_of);
+  for my $zp ( path($zig)->lines({chomp=>1}) ) {
+    #dbd("ZIGGYPEP=$zp");
+    my($qid,$len,$pep) = split m/\t/, $zp;
+    my $sp = dclone( $cds[ $idx_of{$qid} ] );
+    #dmp($sp);
+    $sp->[SOURCE] = "ziggypep:$zp_ver";
+    $sp->[FTYPE] = 'sig_pep';
+    $sp->[FINISH] = $sp->[START] + 3*$len;
+    $sp->[SCORE] = $DOT;
+    $sp->[ATTR] = "product=signal peptide $pep";
+    push @sigpep, $sp;
   }
 
-  return (@mrna, @cds, @term);
+  return (@mrna, @cds, @sigpep, @term);
 }
 
 #----------------------------------------------------------------------
@@ -519,6 +531,15 @@ sub transterm_version {
   my($ver) = qx"transterm -h 2>&1";
   $ver =~ m/^(\S+)\s+v(\S+)/ or err("Can't parse: $ver");
   return "$1:$2";
+}
+#----------------------------------------------------------------------
+sub ziggypep_version {
+  # % ziggypep -v
+  # ziggypep 0.3.1
+  my($ver) = qx"ziggypep -v";
+  chomp $ver;
+  my @ver = split ' ', $ver;
+  return $ver[1];
 }
 #----------------------------------------------------------------------
 sub diamond_version {
