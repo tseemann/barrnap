@@ -787,7 +787,7 @@ sub setOptions {
     {OPT=>"updatedb", VAR=>\$updatedb, DESC=>"Update databases from internet"},
     {OPT=>"dbdir=s", VAR=>\$dbdir, DEFAULT=>$DEFAULT_DBDIR, DESC=>"Location of databases"},
     "MODE",
-    {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: ".join(',', keys %KINGDOM) },
+    {OPT=>"kingdom=s", VAR=>\$kingdom, DEFAULT=>'bac', DESC=>"Kingdom: @KINGDOM" },
     {OPT=>"gcode=s", VAR=>\$gcode, DEFAULT=>'auto', DESC=>"Genetic code table" },
 #    {OPT=>"legacy!", VAR=>\$legacy,  DEFAULT=>0, DESC=>"Simulate barrnap<1.0 - only --rrna)" },
     {OPT=>"all!", VAR=>\$all,  DEFAULT=>0, DESC=>"FInd ALL RNA features" },
