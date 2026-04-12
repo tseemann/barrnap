@@ -14,7 +14,7 @@ use FindBin;
 # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 # global variables
 
-my $VERSION = "1.10.4";
+my $VERSION = "1.10.5";
 my $EXE = $FindBin::RealScript;
 my $DESC = "Rapid microbial RNA annotationn";
 my $AUTHOR = 'Torsten Seemann';
@@ -158,6 +158,8 @@ msg("Found", 0+@gff, "features:");
 for my $f (sort keys %fcount) {
   msg( $fcount{$f}, $f );
 }
+
+msg( motd() ); # final traditional witticism
 
 msg("Done.");
 
@@ -889,3 +891,24 @@ sub usage {
 }
 
 #---------------------------------------------------------------------
+sub motd {
+  my @motd = <DATA>;
+  chomp @motd;
+  if ($_[0]) { say "* $_" for @motd; exit(0); }
+  return $motd[ int(rand(@motd)) ];
+}
+#---------------------------------------------------------------------
+
+__DATA__
+Two nuts walki into a bar. One is assaulted.
+Barrnap - what you have when you fall asleep at the pub.
+Found a bug? Tell me at b.com/tseemann/barrnap/issues
+Did you know Barrnap can accepy Genbank files?
+Fun fact - Barrnap will work with .gz compressed files
+Barrnap does more than just rRNA; try the --all mode!
+Running a bit slow? Use --threads 8 to speed it up.
+Trade accuracy for speed using the --fast option.
+Make a full GFF with sequences using --incseq --incseqreg
+Barrnap also supports Fungi and Arachaea with the --kingdom option
+Barrnap's first code was written in Berlin in 2013
+You can use --fast but it is not recommended due to lower accurarcy
