@@ -11,7 +11,7 @@ use Data::Dumper;
 use Storable qw"dclone";
 use FindBin;
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # global variables
 
 my $VERSION = "1.10.5";
@@ -32,29 +32,29 @@ my %SNAME = (
   'RF01960' => "18S", 'RF02540' => "23S",
   'RF02541' => "23S", 'RF02543' => "28S",
 );
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # constants for GFF3
 use constant {
   SEQ_ID=>0, SOURCE=>1, FTYPE=>2,
   START=>3, FINISH=>4, SCORE=>5, STRAND=>6,
   PHASE=>7, ATTR=>8,
 };
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # command line options
 
-my(@Options, 
-   $quiet, $kingdom, $threads, 
+my(@Options,
+   $quiet, $kingdom, $threads,
    $legacy, $all,
    $fast, $debug, $gcode,
    $rrna, $trna, $ncrna, $mrna,
-   $operon, , $opdist, $addids, 
+   $operon, , $opdist, $addids,
    $listdb, $updatedb, $dbdir,
    $evalue, $lencutoff, $reject,
-   $incseq, $incseqreg, $outseq, 
+   $incseq, $incseqreg, $outseq,
 );
 setOptions();
 
-# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+# . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 # check all is well
 
 #-d $dbdir or err("--dbdir '$dbdir' does not exist");
@@ -92,7 +92,7 @@ if ($all) {
 }
 msg("Checking dependencies:");
 require_exe(
-  'cmsearch', 'cmscan', 'bedtools', 'aragorn', 
+  'cmsearch', 'cmscan', 'bedtools', 'aragorn',
   'any2fasta', 'seqkit', 'make', 'transterm',
   'ziggypep', 'pyrodigal', 'diamond', 'taxonkit'
 );
@@ -198,17 +198,17 @@ sub cds_to_mrna {
   my $attr = attr_to_hash( $mrna->[ATTR] );
   my $rbs_len = rbs_length( $$attr{'rbs_motif'} );
   my $rlen = $rbs_len + rbs_spacer_length( $$attr{'rbs_spacer'} );
-  
+
   if ($mrna->[STRAND] eq '+') {
     $mrna->[START] -= $rlen;
   } else {
     $mrna->[FINISH] += $rlen;
   }
   $mrna->[ATTR] = 'product=messenger RNA';
-  
+
   if ($rlen > 0) {
     $mrna->[ATTR] .= " with RBS";
-  
+
     # add the RBS
     my $rbs = dclone($cds);
     $rbs->[FTYPE] = 'RBS';
@@ -243,7 +243,7 @@ sub find_terminators {
     $_->[SEQ_ID],
   ); } @$cds;
   path($coords)->spew(\@coord);
-  
+
   my $datfile = path(which($ttexe))
                 ->parent
                 ->child("../data/expterm.dat")
@@ -254,7 +254,7 @@ sub find_terminators {
   run_cmd("$ttexe -S -p $datfile $FASTA $coords 1> $termi 2> $termi.log");
 
   #       0     1     2 3      4      5     6
-  #  TERM 19    15310 - 15327  -      F     99     - 12.7 -4.0 |bidir  
+  #  TERM 19    15310 - 15327  -      F     99     - 12.7 -4.0 |bidir
   #       (name)(start - end)  (sense)(loc) (conf) (h p) (tail) (notes)
   my @term;
   my %term;
@@ -279,14 +279,14 @@ sub find_terminators {
         $x[6], # score
         $x[4], # straind
         $DOT,  # phase
-        'product=Rho-independent terminator',      
+        'product=Rho-independent terminator',
       ];
       push $term{ $geneid }->@*, $term;
     }
   }
   # find best terminator in each block
   for my $id (keys %term) {
-    my @t = sort { $b->[SCORE] <=> $a->[SCORE] } 
+    my @t = sort { $b->[SCORE] <=> $a->[SCORE] }
       $term{$id}->@*;
     push @term, $t[0];
   }
@@ -296,18 +296,18 @@ sub find_terminators {
 #----------------------------------------------------------------------
 sub find_genes {
   my($fasta, $kdom, $ttable) = @_;
-  
+
   # check if we have enough sequence
   if (-s $fasta < 19_000) {
     wrn("Skipping mRNA search - sequence too short");
     return;
   }
-  
-  # first find mRNA 
+
+  # first find mRNA
   my $gff = "$EXE.pyrodigal.gff";
   my $faa = "$EXE.pyrodigal.faa";
   run_cmd(
-    "pyrodigal -g $ttable -c -p single -j $threads" 
+    "pyrodigal -g $ttable -c -p single -j $threads"
    ." -i $fasta -f gff -o $gff -a $faa"
   );
 
@@ -328,9 +328,9 @@ sub find_genes {
   }
 
   my @term = find_terminators($fasta, \@cds);
-  
+
   # nake a CDS for each mRNA
-  for my $i (0 .. $#cds) { 
+  for my $i (0 .. $#cds) {
     # vvv NFI why i did this originally
     #$mrna[$i][ATTR] = ''; # blank out mRNA attrs
     my $c = $cds[$i];
@@ -376,7 +376,7 @@ sub find_genes {
   run_cmd("ziggypep $zp_opt -s $faa > $zig");
   # https://github.com/tseemann/ziggypep?tab=readme-ov-file#quick-start
   # SAMD00000344.contig00001_10     12      MILVSLFVGVIC
-  # SAMD00000344.contig00001_11     23      MDNNGKSYNKVLLMLTLLLGTFS  
+  # SAMD00000344.contig00001_11     23      MDNNGKSYNKVLLMLTLLLGTFS
   #dmp(\%idx_of);
   for my $zp ( path($zig)->lines({chomp=>1}) ) {
     #dbd("ZIGGYPEP=$zp");
@@ -402,7 +402,7 @@ sub gff_add_ids {
     my $nv = $f->[ATTR]; # tagsin last column
     my $t = $nv =~ m/Name=([^;]+)/ ? $1 : $f->[2];
     $t =~ s/\s/_/g;
-    $count{$t}++; 
+    $count{$t}++;
     $f->[ATTR] = join ';', "ID=$t-$count{$t}", $nv;
   }
 }
@@ -418,7 +418,7 @@ sub find_operons {
   open my $fh, '>', $outf;
   print_gff($fh, $feats, 0, 0);
   my $inf = "$EXE.operon.bed";
-  run_cmd("bedtools merge -s -d $opdist -i $outf" 
+  run_cmd("bedtools merge -s -d $opdist -i $outf"
          ." -c 3 -o count,collapse -delim '-'"
          ." > $inf");
   open my $BED, '<', $inf;
@@ -468,7 +468,7 @@ sub bed2gff_coords {
 #----------------------------------------------------------------------
 sub gff2bed_coords {
   my($start,$finish,$strand) = @_;
-  return $strand eq '+' 
+  return $strand eq '+'
          ? ($start-1,$finish)
          : ($finish-1,$start);
 }
@@ -478,14 +478,14 @@ sub tsv {
 }
 #----------------------------------------------------------------------
 sub gff_cmp {
-  return ($a->[SEQ_ID] cmp $b->[SEQ_ID])  
-      || ($a->[START] <=> $b->[START])   
+  return ($a->[SEQ_ID] cmp $b->[SEQ_ID])
+      || ($a->[START] <=> $b->[START])
       || ($b->[FINISH] <=> $a->[FINISH]) ;
 }
 #----------------------------------------------------------------------
 sub sort_gff {
   my($gff) = @_;
-  return sort { &gff_cmp } @$gff; 
+  return sort { &gff_cmp } @$gff;
 }
 #----------------------------------------------------------------------
 sub print_gff {
@@ -518,7 +518,7 @@ sub print_gff {
     close $bed;
     my $bq = $quiet ? "2>$DEVNULL" : "";
     run_cmd("bedtools getfasta -s -fo \Q$outseq\E -fi $FASTA -bed $BED $bq");
-  } 
+  }
 }
 #----------------------------------------------------------------------
 sub run_aragorn {
@@ -594,7 +594,7 @@ sub parse_aragorn {
     }
     else {
       my @x = split ' ', $_;
-      $x[2] =~ m/(c?)\[(\d+),(\d+)\]/ 
+      $x[2] =~ m/(c?)\[(\d+),(\d+)\]/
         or err("Can not parse $toolver '$_'");
       my($begin,$end) = ($2,$3);
       my $strand = $1 ? '-' : '+';
@@ -607,8 +607,8 @@ sub parse_aragorn {
       my $name = $x[1];
       $name =~ m/^(\w+)/;
       my $type = $1;
-      my $prod = $type eq 'tRNA' 
-               ? 'transfer RNA' 
+      my $prod = $type eq 'tRNA'
+               ? 'transfer RNA'
                : 'transfer-messenger RNA';
       $prod .= " (non-canonical)" if $odd;
       my $score = $DOT;
@@ -651,7 +651,7 @@ sub parse_infernal {
     }
     next if m/^#/;    # comment line
     next if m/^\s*$/; # empty line
-    
+
     my @x = split ' ', $_;
     dbg( map { "[$_]='$x[$_]' " } 0 .. $#x );
 
@@ -681,13 +681,13 @@ sub parse_infernal {
       $prod = "$sname ribosomal RNA";
     }
 
-    msg("Found $ftype - $prod"); 
+    msg("Found $ftype - $prod");
 
     push @gff, [
-      $seq_id, 
+      $seq_id,
       $DOT, # will patch in true version at end
       $ftype,
-      $begin, $end, $score, $strand,$DOT, 
+      $begin, $end, $score, $strand,$DOT,
         $names
        .";Dbxref=Rfam:$model_acc"
        .";product=$prod"
@@ -729,7 +729,7 @@ sub list_dbs {
     $count++;
   }
   $count or err("You have no databases installed!"
-   ."\nRun '$EXE --updatedb' to update/repair thos");
+   ."\nRun '$EXE --updatedb' to update/repair this");
   exit(0);
 }
 #----------------------------------------------------------------------
@@ -743,7 +743,7 @@ sub update_dbs {
   -w $d or err("You don't have permissions to modify the database folder: $dbdir");
   my $make = "make -j $threads -C \Q$BUILD_DIR\E DBDIR=\Q$d\E";
   run_cmd("$make bigclean");
-  run_cmd("$make install");  
+  run_cmd("$make install");
   list_dbs($d);
   #msg("Finished updating databases.");
   exit(0);
@@ -789,13 +789,13 @@ sub version {
 #----------------------------------------------------------------------
 sub show_citation {
   print STDERR << "EOCITE";
-  
+
 If you use Barrnap in your work, please cite:
 
     Seemann T
     $EXE $VERSION : $DESC
     $URL
-    
+
 Thank you.
 
 EOCITE
@@ -827,8 +827,8 @@ sub setOptions {
     {OPT=>"rrna!",  VAR=>\$rrna, DEFAULT=>1, DESC=>"Find rRNA, disable with --no-rrna" },
     {OPT=>"trna!",  VAR=>\$trna, DEFAULT=>0, DESC=>"Find tRNA/tmRNA, disable with --no-trna" },
     {OPT=>"ncrna!", VAR=>\$ncrna, DEFAULT=>0, DESC=>"Find ncRNA, disable with --no-ncrna" },
-#    {OPT=>"operon!", VAR=>\$operon, DEFAULT=>1, DESC=>"Idenitfy RNA opersons, disanle wioth --no-operson" },
-    {OPT=>"mrna!", VAR=>\$mrna, DEFAULT=>0, DESC=>"Idenitfy mRNA coding regions, disable with --no-mrna" },    
+#    {OPT=>"operon!", VAR=>\$operon, DEFAULT=>1, DESC=>"Identify RNA opersons, disanle wioth --no-operson" },
+    {OPT=>"mrna!", VAR=>\$mrna, DEFAULT=>0, DESC=>"Identify mRNA coding regions, disable with --no-mrna" },
 #    {OPT=>"opdist=i", VAR=>\$opdist, DEFAULT=>200,  DESC=>"Operon clustering threshold" },
     "SPEED",
     {OPT=>"threads=i", VAR=>\$threads, DEFAULT=>1,  DESC=>"CPU cores to use"},
@@ -844,7 +844,7 @@ sub setOptions {
     {OPT=>"outseq=s",  VAR=>\$outseq,  DESC=>"Save RNA hits to a FASTA file"},
   );
 
-  my @opt = ( map { $_->{OPT}, $_->{VAR} } 
+  my @opt = ( map { $_->{OPT}, $_->{VAR} }
                grep { ref }  @Options );
   GetOptions(@opt) or exit(1);
 
@@ -911,4 +911,4 @@ Trade accuracy for speed using the --fast option.
 Make a full GFF with sequences using --incseq --incseqreg
 Barrnap also supports Fungi and Arachaea with the --kingdom option
 Barrnap's first code was written in Berlin in 2013
-You can use --fast but it is not recommended due to lower accurarcy
+You can use --fast but it is not recommended due to lower accuracy

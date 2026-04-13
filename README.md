@@ -15,9 +15,9 @@ RNA features in microbial genomes (bacteria,
 arhchea, fungi). It can find:
 
 * `rRNA` - ribosomal RNA
-* `tRNA` - transfer RNA 
+* `tRNA` - transfer RNA
 * `tmRNA` - transfer messenger RNA
-* `ncRNA` - non-coding RNA 
+* `ncRNA` - non-coding RNA
 * `mRNA` - messenger RNA, inc. `RBS`, `CDS`, `sig_pep`, `terminator`
 
 You provide a FASTA file, you get a GFF3 file.
@@ -76,7 +76,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 ### General
 * `--help` show help and exit
-* `--version` print version in form `barrnap X.Y` and exit 
+* `--version` print version in form `barrnap X.Y` and exit
 * `--citation` print a citation and exit
 * `--debug` will write all tempfiles to '.' and print debug ingo
 
@@ -111,12 +111,12 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 ### What has changed since the 0.9 version?
 
-* Barrnap now finds **all** RNA, not just `rRNA`. 
-  Use the `--legacy` option for backward compatiblity
+* Barrnap now finds **all** RNA, not just `rRNA`.
+  Use the `--legacy` option for backward compatibility
 * I no longer use nucleotide HMMs and local alignment.
   To get that behaviour use `--fast`.
 * The `mito` model is gone, the `fun` model is in.
-* The `--reject` and `--lencutoff` paramters are
+* The `--reject` and `--lencutoff` parameters are
   ignored now, as we use global CMs now.
 * SILVA is no longer used, all models are from Rfam.
 * The `--reject` and `--lencutoff` parameters are no longer supported
@@ -125,7 +125,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 Yes. It's faster, and finds more features.
 It's missing some things like `EC_number`
-and `COG` annotations, and doen't produce
+and `COG` annotations, and doesn't produce
 Genbank files.
 
 ### Where does the name come from?
@@ -133,12 +133,12 @@ Genbank files.
 The name Barrnap was originally derived from _Bacterial/Archaeal Ribosomal RNA Predictor_.
 However it has since been extended to support mitochondrial and eukaryotic rRNAs, and has been
 given the new backronym _BAsic Rapid Ribosomal RNA Predictor_.
-The project was originally spawned at CodeFest 2013 in Berlin, Germany 
+The project was originally spawned at CodeFest 2013 in Berlin, Germany
 by Torsten Seemann and Tim Booth.
 
 ## Databases
 
-Barrnap sotres its database files in the `db` 
+Barrnap sorts its database files in the `db`
 folder, with a subfolder for each `--kingdom`.
 ```
 % barrnap --listdb
@@ -150,7 +150,7 @@ folder, with a subfolder for each `--kingdom`.
 ```
 Because the Rfam database does not update very often,
 you rarely need to update them yourself using `--updatedb`.
-When there are new models, I will update them 
+When there are new models, I will update them
 myself and make a new release of `barrnap` which
 will likely have other bugfixes and features
 you will want anyway.
@@ -170,7 +170,7 @@ you will want anyway.
 
 ## Feedback
 
-File questions, bugs, or ideas on the 
+File questions, bugs, or ideas on the
 [Issues page](https://github.com/tseemann/barrnap/issues)
 
 ## License
@@ -180,5 +180,3 @@ File questions, bugs, or ideas on the
 ## Author
 
 [Torsten Seemann](https://tseemann.github.io)
-
-
