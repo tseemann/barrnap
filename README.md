@@ -12,7 +12,7 @@ Annotate all the bacterial RNA in your genome
 
 Barrnap is an annotation tool for identifying
 RNA features in microbial genomes (bacteria,
-arhchea, fungi). It can find:
+archaea, fungi). It can find:
 
 * `rRNA` - ribosomal RNA
 * `tRNA` - transfer RNA 
@@ -78,7 +78,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * `--help` show help and exit
 * `--version` print version in form `barrnap X.Y` and exit 
 * `--citation` print a citation and exit
-* `--debug` will write all tempfiles to '.' and print debug ingo
+* `--debug` will write all tempfiles to '.' and print debug info
 
 ### Database management
 * `--listdb` to see what DBs are installed
@@ -86,7 +86,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * `--dbdir` to use a different DB folder
 
 ### Search
-* `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`,   Fungi:`fun`
+* `--kingdom` is the database to use: Bacteria:`bac`, Archaea:`arc`, Fungi:`fun`
 * `--all` only does rRNA scan, like versions < 1.0 did.
 * `--no-rrna` disables rRNA scan
 * `--trna` enables tRNA scan
@@ -94,8 +94,8 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * `--mrna` enables mRNA scan (included CDS,RBS,sig_pep,terminator)
 
 ### Speed
-* `--threads` is how many CPUs to uase
-* `--fast` uses simpler HMMs instead of CMs and it less accurate
+* `--threads` is how many CPUs to use
+* `--fast` uses simpler HMMs instead of CMs and is less accurate
 
 ### Filtering
 * `--evalue` is the cut-off for hits to keep
@@ -105,7 +105,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 * `--incseq` will include the full input sequences in the output GFF
 * `--incseqreg` will include `##sequence-region` headers in the GFF
 * `--outseq` creates a FASTA file with the hit sequences
-* `--adids` will add unique `ID=` tags to each  GFF3 feature
+* `--adids` will add unique `ID=` tags to each GFF3 feature
 
 ## FAQ
 
@@ -113,7 +113,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 * Barrnap now finds **all** RNA, not just `rRNA`. 
   Use the `--legacy` option for backward compatiblity
-* I no longer use nucleotide HMMs and local alignment.
+* It no longer uses nucleotide HMMs and local alignment.
   To get that behaviour use `--fast`.
 * The `mito` model is gone, the `fun` model is in.
 * The `--reject` and `--lencutoff` paramters are
@@ -125,7 +125,7 @@ AAGGAATTAGAATATTGACTAGATAGGTTCTAATGGGAATCAGCCATTGGAGGTAACGGG
 
 Yes. It's faster, and finds more features.
 It's missing some things like `EC_number`
-and `COG` annotations, and doen't produce
+and `COG` annotations, and doesn't produce
 Genbank files.
 
 ### Where does the name come from?
@@ -138,7 +138,7 @@ by Torsten Seemann and Tim Booth.
 
 ## Databases
 
-Barrnap sotres its database files in the `db` 
+Barrnap stores its database files in the `db` 
 folder, with a subfolder for each `--kingdom`.
 ```
 % barrnap --listdb
