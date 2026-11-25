@@ -217,8 +217,8 @@ sub cds_to_mrna {
       $rbs->[START] = $mrna->[START];
       $rbs->[FINISH] = $mrna->[START] + $rbs_len - 1;
     } else {
-      $rbs->[FINISH] = $mrna->[FINISH] + $rbs_len - 1;
-      $rbs->[START] = $mrna->[FINISH];
+      $rbs->[FINISH] = $mrna->[FINISH];
+      $rbs->[START] = $rbs->[FINISH] - $rbs_len + 1;
     }
     $rbs->[ATTR] = "product=ribosome binding site "
                  . $attr->{'rbs_motif'} ;

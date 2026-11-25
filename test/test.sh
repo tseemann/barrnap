@@ -89,6 +89,27 @@ setup () {
   run -0 grep '>small:' "$outseq"
 }
 
+@test "Reverse-strand RBS ends match the mRNA boundary" {
+  run -0 $exe --mrna --no-rrna --quiet bac.fa
+  awk -F '\t' '
+    $3 == "mRNA" && $7 == "-" { mrna_end[$1, $5] = 1 }
+    $3 == "RBS" && $7 == "-" && $4 < $5 { rbs_end[$1, $5] = 1; count++ }
+    END {
+      if (!count) {
+        print "Expected a multi-base reverse-strand RBS" > "/dev/stderr"
+        exit 1
+      }
+      for (key in rbs_end) {
+        if (!(key in mrna_end)) {
+          split(key, locus, SUBSEP)
+          print "Reverse-strand RBS end without a matching mRNA end", locus[1], locus[2] > "/dev/stderr"
+          exit 1
+        }
+      }
+    }
+  ' <<< "$output"
+}
+
 barrnap_legacy() {
   run -0 $exe --quiet \
     --kingdom "$1" "$1.fa"
