@@ -66,6 +66,54 @@ setup () {
   run -0 $exe -q --fast small.fa
   [[ "$output" =~ $RRNA ]]
 }
+@test "Aragorn clipping is reported and retained as partial in GFF3" {
+  local fixture="$BATS_TEST_TMPDIR"
+  printf '>short with a description\n%080d\n>long\n%0100d\n' 0 0 |
+    tr 0 A > "$fixture/contigs.fa"
+  cat > "$fixture/aragorn" <<'EOF'
+#!/bin/sh
+if [ "$1" = '-h' ]; then
+  echo 'ARAGORN v1.2.41'
+  exit 0
+fi
+cat > "$4" <<'REPORT'
+>short with a description
+5 genes found
+1    tRNA-Asn    c[-1,74]    33    (gtt)
+2    tRNA-Ala    [8,81]      34    (tgc)
+3    tmRNA       [0,83]      35,45 TAG**
+4    tRNA-Ile    [81,90]     35    (gat)
+5    tRNA-Val    c[1,80]     35    (tac)
+>long
+1 gene found
+1    tRNA-Ala    [8,81]      34    (tgc)
+>end    2 sequences 5 tRNA genes 1 tmRNA genes
+REPORT
+EOF
+  chmod +x "$fixture/aragorn"
+
+  run -0 --separate-stderr env PATH="$fixture:$PATH" "$dir/../bin/barrnap" --threads 1 \
+    --trna --no-rrna "$fixture/contigs.fa"
+  [[ $(grep -c 'Clipping aragorn:1.2.41 prediction' <<< "$stderr") -eq 3 ]]
+  [[ "$stderr" == *'WARNING: Clipping aragorn:1.2.41 prediction tRNA-Asn short c[-1,74] to 1..74 (length 80)'* ]]
+  [[ "$stderr" == *'WARNING: Clipping aragorn:1.2.41 prediction tRNA-Ala short [8,81] to 8..80 (length 80)'* ]]
+  [[ "$stderr" == *'WARNING: Clipping aragorn:1.2.41 prediction tmRNA short [0,83] to 1..80 (length 80)'* ]]
+  [[ "$stderr" == *'No in-contig interval for aragorn:1.2.41 prediction tRNA-Ile short [81,90]'* ]]
+  awk -F '\t' '
+    $3 == "tRNA" || $3 == "tmRNA" { count++ }
+    $1 == "short" && $3 == "tRNA" && $4 == 1 && $5 == 74 && $7 == "-" &&
+      $9 ~ /;partial=true;start_range=\.,1$/ { left = 1 }
+    $1 == "short" && $3 == "tRNA" && $4 == 8 && $5 == 80 && $7 == "+" &&
+      $9 ~ /;partial=true;end_range=80,\.$/ { right = 1 }
+    $1 == "short" && $3 == "tmRNA" && $4 == 1 && $5 == 80 && $7 == "+" &&
+      $9 ~ /;partial=true;start_range=\.,1;end_range=80,\.$/ { both = 1 }
+    $1 == "short" && $3 == "tRNA" && $4 == 1 && $5 == 80 && $7 == "-" &&
+      $9 !~ /;partial=/ { full = 1 }
+    $1 == "long" && $3 == "tRNA" && $4 == 8 && $5 == 81 && $7 == "+" &&
+      $9 !~ /;partial=/ { long = 1 }
+    END { exit !(count == 5 && left && right && both && full && long) }
+  ' <<< "$output"
+}
 @test "Mini bacterial genome" {
   local outseq="${BATS_TMPDIR}/outseq.fa"
   run -0 $exe --all --quiet \
