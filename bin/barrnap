@@ -126,7 +126,7 @@ my @gff;
 if ($trna) {
   my $toolver = aragorn_version();
   my $ara_file = run_aragorn($FASTA, $gcode);
-  push @gff, parse_aragorn($ara_file, $toolver);
+  push @gff, parse_aragorn($ara_file, $toolver, "$FASTA.fai");
 }
 if ($rrna) {
   my $tool = 'cmsearch';
@@ -217,8 +217,8 @@ sub cds_to_mrna {
       $rbs->[START] = $mrna->[START];
       $rbs->[FINISH] = $mrna->[START] + $rbs_len - 1;
     } else {
-      $rbs->[FINISH] = $mrna->[FINISH] + $rbs_len - 1;
-      $rbs->[START] = $mrna->[FINISH];
+      $rbs->[FINISH] = $mrna->[FINISH];
+      $rbs->[START] = $rbs->[FINISH] - $rbs_len + 1;
     }
     $rbs->[ATTR] = "product=ribosome binding site "
                  . $attr->{'rbs_motif'} ;
@@ -563,8 +563,13 @@ sub aragorn_version {
 }
 #----------------------------------------------------------------------
 sub parse_aragorn {
-  my($fname, $toolver) = @_;
+  my($fname, $toolver, $fai) = @_;
   $toolver ||= "$EXE:$VERSION";
+  my %lengths;
+  for my $line (path($fai)->lines({chomp=>1})) {
+    my($id, $length) = split /\t/, $line;
+    $lengths{$id} = $length;
+  }
   my %PROD = (
     'tRNA'   => 'trasnfer RNA',
     'tmRAN'  => 'transfer-meesenger RNA',
@@ -594,10 +599,24 @@ sub parse_aragorn {
     }
     else {
       my @x = split ' ', $_;
-      $x[2] =~ m/(c?)\[(\d+),(\d+)\]/ 
+      my($reverse, $begin, $end) = $x[2] =~ m/\A(c?)\[(-?\d+),(-?\d+)\]\z/
         or err("Can not parse $toolver '$_'");
-      my($begin,$end) = ($2,$3);
-      my $strand = $1 ? '-' : '+';
+      my $length = defined $seqid ? $lengths{$seqid} : undef;
+      defined $length or err("Unknown sequence in $toolver report: '$_'");
+      my $first = max(1, $begin);
+      my $last = min($length, $end);
+      my @partial;
+      if ($first != $begin || $last != $end) {
+        if ($first > $last) {
+          wrn("No in-contig interval for $toolver prediction $x[1] $seqid $x[2] (length $length)");
+          next;
+        }
+        push @partial, 'partial=true';
+        push @partial, 'start_range=.,1' if $first != $begin;
+        push @partial, "end_range=$length,." if $last != $end;
+        wrn("Clipping $toolver prediction $x[1] $seqid $x[2] to $first..$last (length $length)");
+      }
+      my $strand = $reverse ? '-' : '+';
 
       my $odd=0;
       if ($x[1] =~ m/\*$/) {
@@ -612,12 +631,14 @@ sub parse_aragorn {
                : 'transfer-messenger RNA';
       $prod .= " (non-canonical)" if $odd;
       my $score = $DOT;
+      my $attrs = "Name=$name;product=$prod" . (defined $x[4] ? " $x[4]" : "");
+      $attrs .= ';' . join(';', @partial) if @partial;
 
       push @gff, [
         $seqid, $toolver,
-        $type, $begin, $end,
+        $type, $first, $last,
         $score, $strand,  $DOT,
-        "Name=$name;product=$prod" . (defined $x[4] ? " $x[4]" : "")
+        $attrs
       ];
       msg("Found $name - $prod");
     }
